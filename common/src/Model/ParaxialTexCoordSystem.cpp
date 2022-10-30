@@ -32,6 +32,7 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <numeric>
 #include <optional>
 #include <utility> // for std::pair
 
@@ -40,24 +41,24 @@ namespace TrenchBroom
 namespace Model
 {
 const vm::vec3 ParaxialTexCoordSystem::BaseAxes[] = {
-  vm::vec3(0.0, 0.0, 1.0),
-  vm::vec3(1.0, 0.0, 0.0),
-  vm::vec3(0.0, -1.0, 0.0),
-  vm::vec3(0.0, 0.0, -1.0),
-  vm::vec3(1.0, 0.0, 0.0),
-  vm::vec3(0.0, -1.0, 0.0),
-  vm::vec3(1.0, 0.0, 0.0),
-  vm::vec3(0.0, 1.0, 0.0),
-  vm::vec3(0.0, 0.0, -1.0),
-  vm::vec3(-1.0, 0.0, 0.0),
-  vm::vec3(0.0, 1.0, 0.0),
-  vm::vec3(0.0, 0.0, -1.0),
-  vm::vec3(0.0, 1.0, 0.0),
-  vm::vec3(1.0, 0.0, 0.0),
-  vm::vec3(0.0, 0.0, -1.0),
-  vm::vec3(0.0, -1.0, 0.0),
-  vm::vec3(1.0, 0.0, 0.0),
-  vm::vec3(0.0, 0.0, -1.0),
+  vm::vec3{0.0, 0.0, 1.0},
+  vm::vec3{1.0, 0.0, 0.0},
+  vm::vec3{0.0, -1.0, 0.0},
+  vm::vec3{0.0, 0.0, -1.0},
+  vm::vec3{1.0, 0.0, 0.0},
+  vm::vec3{0.0, -1.0, 0.0},
+  vm::vec3{1.0, 0.0, 0.0},
+  vm::vec3{0.0, 1.0, 0.0},
+  vm::vec3{0.0, 0.0, -1.0},
+  vm::vec3{-1.0, 0.0, 0.0},
+  vm::vec3{0.0, 1.0, 0.0},
+  vm::vec3{0.0, 0.0, -1.0},
+  vm::vec3{0.0, 1.0, 0.0},
+  vm::vec3{1.0, 0.0, 0.0},
+  vm::vec3{0.0, 0.0, -1.0},
+  vm::vec3{0.0, -1.0, 0.0},
+  vm::vec3{1.0, 0.0, 0.0},
+  vm::vec3{0.0, 0.0, -1.0},
 };
 
 ParaxialTexCoordSystem::ParaxialTexCoordSystem(
@@ -65,61 +66,48 @@ ParaxialTexCoordSystem::ParaxialTexCoordSystem(
   const vm::vec3& point1,
   const vm::vec3& point2,
   const BrushFaceAttributes& attribs)
-  : m_index(0)
+  : m_index{0}
 {
   resetCache(point0, point1, point2, attribs);
 }
 
 ParaxialTexCoordSystem::ParaxialTexCoordSystem(
   const vm::vec3& normal, const BrushFaceAttributes& attribs)
-  : m_index(0)
+  : m_index{0}
 {
   setRotation(normal, 0.0f, attribs.rotation());
 }
 
 ParaxialTexCoordSystem::ParaxialTexCoordSystem(
   const size_t index, const vm::vec3& xAxis, const vm::vec3& yAxis)
-  : m_index(index)
-  , m_xAxis(xAxis)
-  , m_yAxis(yAxis)
+  : m_index{index}
+  , m_xAxis{xAxis}
+  , m_yAxis{yAxis}
 {
 }
 
 size_t ParaxialTexCoordSystem::planeNormalIndex(const vm::vec3& normal)
 {
-  size_t bestIndex = 0;
-  FloatType bestDot = static_cast<FloatType>(0.0);
-  for (size_t i = 0; i < 6; ++i)
-  {
-    const FloatType curDot = dot(normal, BaseAxes[i * 3]);
-    if (curDot > bestDot)
-    { // no need to use -altaxis for qbsp, but -oldaxis is necessary
-      bestDot = curDot;
-      bestIndex = i;
-    }
-  }
-  return bestIndex;
+  static const auto indices = {1u, 2u, 3u, 4u, 5u};
+  return std::accumulate(
+    indices.begin(), indices.end(), 0u, [&](const auto& best, const auto& cur) {
+      const auto curDot = vm::dot(normal, BaseAxes[cur * 3]);
+      const auto bestDot = vm::dot(normal, BaseAxes[best * 3]);
+      // no need to use -altaxis for qbsp, but -oldaxis is necessary
+      return curDot > bestDot ? cur : best;
+    });
 }
 
-void ParaxialTexCoordSystem::axes(const size_t index, vm::vec3& xAxis, vm::vec3& yAxis)
+std::tuple<vm::vec3, vm::vec3, vm::vec3> ParaxialTexCoordSystem::axes(const size_t index)
 {
-  vm::vec3 temp;
-  axes(index, xAxis, yAxis, temp);
-}
-
-void ParaxialTexCoordSystem::axes(
-  size_t index, vm::vec3& xAxis, vm::vec3& yAxis, vm::vec3& projectionAxis)
-{
-  xAxis = BaseAxes[index * 3 + 1];
-  yAxis = BaseAxes[index * 3 + 2];
-  projectionAxis = BaseAxes[(index / 2) * 6];
+  return {BaseAxes[index * 3 + 1], BaseAxes[index * 3 + 2], BaseAxes[(index / 2) * 6]};
 }
 
 vm::plane3 ParaxialTexCoordSystem::planeFromPoints(
   const vm::vec3& point0, const vm::vec3& point1, const vm::vec3& point2)
 {
-  const vm::vec3 normal = normalize(cross(point2 - point0, point1 - point0));
-  return vm::plane3(point0, normal);
+  const auto normal = vm::normalize(vm::cross(point2 - point0, point1 - point0));
+  return vm::plane3{point0, normal};
 }
 
 std::unique_ptr<TexCoordSystem> ParaxialTexCoordSystem::doClone() const
@@ -132,8 +120,7 @@ std::unique_ptr<TexCoordSystemSnapshot> ParaxialTexCoordSystem::doTakeSnapshot()
   return std::unique_ptr<TexCoordSystemSnapshot>();
 }
 
-void ParaxialTexCoordSystem::doRestoreSnapshot(
-  const TexCoordSystemSnapshot& /* snapshot */)
+void ParaxialTexCoordSystem::doRestoreSnapshot(const TexCoordSystemSnapshot&)
 {
   ensure(false, "unsupported");
 }
@@ -159,7 +146,7 @@ void ParaxialTexCoordSystem::doResetCache(
   const vm::vec3& point2,
   const BrushFaceAttributes& attribs)
 {
-  const vm::vec3 normal = planeFromPoints(point0, point1, point2).normal;
+  const auto normal = planeFromPoints(point0, point1, point2).normal;
   setRotation(normal, 0.0f, attribs.rotation());
 }
 
@@ -175,7 +162,7 @@ void ParaxialTexCoordSystem::doResetTextureAxesToParallel(
 
 bool ParaxialTexCoordSystem::isRotationInverted(const vm::vec3& normal) const
 {
-  const size_t index = planeNormalIndex(normal);
+  const auto index = planeNormalIndex(normal);
   return index % 2 == 0;
 }
 
@@ -191,7 +178,7 @@ void ParaxialTexCoordSystem::doSetRotation(
   const vm::vec3& normal, const float /* oldAngle */, const float newAngle)
 {
   m_index = planeNormalIndex(normal);
-  axes(m_index, m_xAxis, m_yAxis);
+  std::tie(m_xAxis, m_yAxis, std::ignore) = axes(m_index);
   rotateAxes(m_xAxis, m_yAxis, vm::to_radians(static_cast<FloatType>(newAngle)), m_index);
 }
 
@@ -201,20 +188,17 @@ void ParaxialTexCoordSystem::doTransform(
   const vm::mat4x4& transformation,
   BrushFaceAttributes& attribs,
   const vm::vec2f& textureSize,
-  bool lockTexture,
+  const bool lockTexture,
   const vm::vec3& oldInvariant)
 {
-  const vm::vec3 offset = transformation * vm::vec3::zero();
-  const vm::vec3& oldNormal = oldBoundary.normal;
-  vm::vec3 newNormal = newBoundary.normal;
-  assert(vm::is_unit(newNormal, vm::C::almost_zero()));
+  assert(vm::is_unit(newBoundary.normal, vm::C::almost_zero()));
 
-  // fix some rounding errors - if the old and new texture axes are almost the same, use
-  // the old axis
-  if (vm::is_equal(newNormal, oldNormal, 0.01))
-  {
-    newNormal = oldNormal;
-  }
+  const auto offset = transformation * vm::vec3::zero();
+  const auto& oldNormal = oldBoundary.normal;
+
+  // use old axis if old and new are almost the same to avoid rounding errors
+  const auto& newNormal =
+    vm::is_equal(newBoundary.normal, oldNormal, 0.01) ? oldNormal : newBoundary.normal;
 
   if (!lockTexture || attribs.xScale() == 0.0f || attribs.yScale() == 0.0f)
   {
@@ -223,91 +207,89 @@ void ParaxialTexCoordSystem::doTransform(
   }
 
   // calculate the current texture coordinates of the origin
-  const vm::vec2f oldInvariantTexCoords =
+  const auto oldInvariantTexCoords =
     computeTexCoords(oldInvariant, attribs.scale()) + attribs.offset();
 
   // project the texture axes onto the boundary plane along the texture Z axis
-  const vm::vec2 scale(attribs.scale());
-  const vm::vec3 boundaryOffset = oldBoundary.project_point(vm::vec3::zero(), getZAxis());
-  const vm::vec3 oldXAxisOnBoundary =
+  const auto scale = vm::vec2{attribs.scale()};
+  const auto boundaryOffset = oldBoundary.project_point(vm::vec3::zero(), getZAxis());
+  const auto oldXAxisOnBoundary =
     oldBoundary.project_point(m_xAxis * scale.x(), getZAxis()) - boundaryOffset;
-  const vm::vec3 oldYAxisOnBoundary =
+  const auto oldYAxisOnBoundary =
     oldBoundary.project_point(m_yAxis * scale.y(), getZAxis()) - boundaryOffset;
 
   // transform the projected texture axes and compensate the translational component
-  const vm::vec3 transformedXAxis = transformation * oldXAxisOnBoundary - offset;
-  const vm::vec3 transformedYAxis = transformation * oldYAxisOnBoundary - offset;
+  const auto transformedXAxis = transformation * oldXAxisOnBoundary - offset;
+  const auto transformedYAxis = transformation * oldYAxisOnBoundary - offset;
 
-  const bool preferX = textureSize.x() >= textureSize.y();
+  const auto preferX = textureSize.x() >= textureSize.y();
 
   // obtain the new texture plane norm and the new base texture axes
-  vm::vec3 newBaseXAxis, newBaseYAxis, newProjectionAxis;
-  const size_t newIndex = planeNormalIndex(newNormal);
-  axes(newIndex, newBaseXAxis, newBaseYAxis, newProjectionAxis);
+  const auto newIndex = planeNormalIndex(newNormal);
+  const auto [newBaseXAxis, newBaseYAxis, newProjectionAxis] = axes(newIndex);
 
-  const vm::plane3 newTexturePlane(0.0, newProjectionAxis);
+  const auto newTexturePlane = vm::plane3{0.0, newProjectionAxis};
 
   // project the transformed texture axes onto the new texture projection plane
-  const vm::vec3 projectedTransformedXAxis =
-    newTexturePlane.project_point(transformedXAxis);
-  const vm::vec3 projectedTransformedYAxis =
-    newTexturePlane.project_point(transformedYAxis);
+  const auto projectedTransformedXAxis = newTexturePlane.project_point(transformedXAxis);
+  const auto projectedTransformedYAxis = newTexturePlane.project_point(transformedYAxis);
   assert(
     !vm::is_nan(projectedTransformedXAxis) && !vm::is_nan(projectedTransformedYAxis));
 
-  const vm::vec3 normalizedXAxis = vm::normalize(projectedTransformedXAxis);
-  const vm::vec3 normalizedYAxis = vm::normalize(projectedTransformedYAxis);
+  const auto normalizedXAxis = vm::normalize(projectedTransformedXAxis);
+  const auto normalizedYAxis = vm::normalize(projectedTransformedYAxis);
 
   // determine the rotation angle from the dot product of the new base axes and the
   // transformed, projected and normalized texture axes
-  float cosX = static_cast<float>(vm::dot(newBaseXAxis, normalizedXAxis));
-  float cosY = static_cast<float>(vm::dot(newBaseYAxis, normalizedYAxis));
+  auto cosX = static_cast<float>(vm::dot(newBaseXAxis, normalizedXAxis));
+  auto cosY = static_cast<float>(vm::dot(newBaseYAxis, normalizedYAxis));
   assert(!vm::is_nan(cosX));
   assert(!vm::is_nan(cosY));
 
-  float radX = std::acos(cosX);
-  if (dot(cross(newBaseXAxis, normalizedXAxis), newProjectionAxis) < 0.0)
-    radX *= -1.0f;
+  const auto xAngle =
+    vm::dot(vm::cross(newBaseXAxis, normalizedXAxis), newProjectionAxis) < 0.0
+      ? -std::acos(cosX)
+      : +std::acos(cosX);
 
-  float radY = std::acos(cosY);
-  if (dot(cross(newBaseYAxis, normalizedYAxis), newProjectionAxis) < 0.0)
-    radY *= -1.0f;
+  const auto yAngle =
+    vm::dot(vm::cross(newBaseYAxis, normalizedYAxis), newProjectionAxis) < 0.0
+      ? -std::acos(cosY)
+      : +std::acos(cosY);
 
-  // TODO: be smarter about choosing between the X and Y axis rotations - sometimes either
-  // one can be better
-  float rad = preferX ? radX : radY;
+  // when the texture plane normal is the Y axis, we must rotate clockwise - no idea why
+  const auto planeNormIndex = (newIndex / 2) * 6;
+  const auto angleDirection = planeNormIndex == 12 ? -1.0f : 1.0f;
 
-  // for some reason, when the texture plane normal is the Y axis, we must rotation
-  // clockwise
-  const size_t planeNormIndex = (newIndex / 2) * 6;
-  if (planeNormIndex == 12)
-    rad *= -1.0f;
+  // TODO: be smarter about choosing between the X and Y axis rotations - sometimes
+  // either one can be better
+  const auto angle = angleDirection * (preferX ? xAngle : yAngle);
 
-  const float newRotation = vm::correct(vm::normalize_degrees(vm::to_degrees(rad)), 4);
+  const auto newRotation = vm::normalize_degrees(vm::to_degrees(angle));
   doSetRotation(newNormal, newRotation, newRotation);
 
-  // finally compute the scaling factors
-  vm::vec2f newScale = correct(
-    vm::vec2f(length(projectedTransformedXAxis), length(projectedTransformedYAxis)), 4);
+  // the sign of the scaling factors depends on the angle between the new texture axis
+  // and the projected transformed axis
+  const auto scaleSign = vm::vec2f{
+    vm::dot(m_xAxis, normalizedXAxis) < 0.0 ? -1.0f : 1.0f,
+    vm::dot(m_yAxis, normalizedYAxis) < 0.0 ? -1.0f : 1.0f};
 
-  // the sign of the scaling factors depends on the angle between the new texture axis and
-  // the projected transformed axis
-  if (dot(m_xAxis, normalizedXAxis) < 0.0)
-    newScale[0] *= -1.0f;
-  if (dot(m_yAxis, normalizedYAxis) < 0.0)
-    newScale[1] *= -1.0f;
+  // finally compute the scaling factors
+  const auto newScale =
+    vm::vec2f{
+      vm::length(vm::vec3f{projectedTransformedXAxis}),
+      vm::length(vm::vec3f{projectedTransformedYAxis})}
+    * scaleSign;
 
   // compute the parameters of the transformed texture coordinate system
-  const vm::vec3 newInvariant = transformation * oldInvariant;
+  const auto newInvariant = transformation * oldInvariant;
 
-  // determine the new texture coordinates of the transformed center of the face, sans
-  // offsets
-  const vm::vec2f newInvariantTexCoords = computeTexCoords(newInvariant, newScale);
+  // determine the new texture coordinates of the transformed center, sans offsets
+  const auto newInvariantTexCoords = computeTexCoords(newInvariant, newScale);
 
-  // since the center should be invariant, the offsets are determined by the difference of
-  // the current and the original texture coordiknates of the center
-  const vm::vec2f newOffset = correct(
-    attribs.modOffset(oldInvariantTexCoords - newInvariantTexCoords, textureSize), 4);
+  // since the center should be invariant, the offsets are determined by the
+  // difference of the current and the original texture coordinates of the center
+  const auto newOffset =
+    attribs.modOffset(oldInvariantTexCoords - newInvariantTexCoords, textureSize);
 
   assert(!vm::is_nan(newOffset));
   assert(!vm::is_nan(newScale));
@@ -315,9 +297,9 @@ void ParaxialTexCoordSystem::doTransform(
   assert(!vm::is_zero(newScale.x(), vm::Cf::almost_zero()));
   assert(!vm::is_zero(newScale.y(), vm::Cf::almost_zero()));
 
-  attribs.setOffset(newOffset);
-  attribs.setScale(newScale);
-  attribs.setRotation(newRotation);
+  attribs.setOffset(vm::correct(newOffset, 4));
+  attribs.setScale(vm::correct(newScale, 4));
+  attribs.setRotation(vm::correct(newRotation, 4));
 }
 
 void ParaxialTexCoordSystem::doUpdateNormalWithProjection(
@@ -344,8 +326,8 @@ void ParaxialTexCoordSystem::doShearTexture(
 float ParaxialTexCoordSystem::doMeasureAngle(
   const float currentAngle, const vm::vec2f& center, const vm::vec2f& point) const
 {
-  const auto rot = vm::quatf(vm::vec3f::pos_z(), -vm::to_radians(currentAngle));
-  const auto vec = rot * vm::vec3f(point - center);
+  const auto rot = vm::quatf{vm::vec3f::pos_z(), -vm::to_radians(currentAngle)};
+  const auto vec = rot * vm::vec3f{point - center};
 
   const auto angleInRadians =
     vm::Cf::two_pi()
@@ -380,9 +362,9 @@ void ParaxialTexCoordSystem::rotateAxes(
   const FloatType angleInRadians,
   const size_t planeNormIndex) const
 {
-  const vm::vec3 rotAxis =
+  const auto rotAxis =
     vm::cross(BaseAxes[planeNormIndex * 3 + 2], BaseAxes[planeNormIndex * 3 + 1]);
-  const vm::quat3 rot(rotAxis, angleInRadians);
+  const auto rot = vm::quat3{rotAxis, angleInRadians};
   xAxis = vm::correct(rot * xAxis);
   yAxis = vm::correct(rot * yAxis);
 }
@@ -391,104 +373,91 @@ namespace FromParallel
 {
 struct ParaxialAttribs
 {
-  float rotation = 0.0;
+  float rotation = 0.0f;
   vm::vec2f scale = vm::vec2f::fill(1.0f);
   vm::vec2f offset;
 };
 
 struct ParaxialAttribsNoOffset
 {
-  float rotate = 0.0;
+  float rotate = 0.0f;
   vm::vec2f scale = vm::vec2f::fill(1.0f);
 };
 
-static std::pair<size_t, size_t> getSTAxes(const vm::vec3f& snappedNormal)
+static std::tuple<size_t, size_t> getSTAxes(const vm::vec3f& snappedNormal)
 {
   if (snappedNormal[0] != 0.0f)
   {
-    return std::make_pair(1, 2);
+    return {1, 2};
   }
-  else if (snappedNormal[1] != 0.0f)
+  if (snappedNormal[1] != 0.0f)
   {
-    return std::make_pair(0, 2);
+    return {0, 2};
   }
-  else
-  {
-    return std::make_pair(0, 1);
-  }
+  return {0, 1};
 }
 
 static vm::vec2f projectToAxisPlane(
   const vm::vec3f& snappedNormal, const vm::vec3f& point)
 {
-  const auto axes = getSTAxes(snappedNormal);
-  return vm::vec2f(point[axes.first], point[axes.second]);
+  const auto [s, t] = getSTAxes(snappedNormal);
+  return vm::vec2f{point[s], point[t]};
 }
 
-static void textureAxisFromFacePlane(
-  const vm::plane3& facePlane,
-  vm::vec3f& xVecOut,
-  vm::vec3f& yVecOut,
-  vm::vec3f& snappedNormal)
+static std::tuple<vm::vec3f, vm::vec3f, vm::vec3f> textureAxisFromFacePlane(
+  const vm::plane3& facePlane)
 {
-  vm::vec3 xVec, yVec, projectionAxis;
-  ParaxialTexCoordSystem::axes(
-    ParaxialTexCoordSystem::planeNormalIndex(facePlane.normal),
-    xVec,
-    yVec,
-    projectionAxis);
+  const auto [xVec, yVec, projectionAxis] = ParaxialTexCoordSystem::axes(
+    ParaxialTexCoordSystem::planeNormalIndex(facePlane.normal));
 
-  xVecOut = vm::vec3f(xVec);
-  yVecOut = vm::vec3f(yVec);
-  snappedNormal = -vm::vec3f(projectionAxis);
+  return {vm::vec3f{xVec}, vm::vec3f{yVec}, -vm::vec3f{projectionAxis}};
 }
 
 static vm::mat2x2f mat2x2_rotation_degrees(const float degrees)
 {
-  const float r = vm::to_radians(degrees);
-  const float cosr = std::cos(r);
-  const float sinr = std::sin(r);
+  const auto r = vm::to_radians(degrees);
+  const auto cosr = std::cos(r);
+  const auto sinr = std::sin(r);
 
   return {cosr, -sinr, sinr, cosr};
 }
 
 static float mat2x2_extract_rotation_degrees(const vm::mat2x2f& m)
 {
-  const vm::vec2f point =
-    m * vm::vec2f(1, 0); // choice of this matters if there's shearing
-  const float rotation = std::atan2(point[1], point[0]);
+  const auto point = m * vm::vec2f{1, 0}; // choice of this matters if there's shearing
+  const auto rotation = std::atan2(point[1], point[0]);
   return vm::to_degrees(rotation);
 }
 
 static vm::vec2f getTexCoordsAtPoint(
   const ParaxialAttribs& attribs, const vm::plane3& facePlane, const vm::vec3& point)
 {
-  BrushFaceAttributes tempAttribs("");
+  auto tempAttribs = BrushFaceAttributes{""};
   tempAttribs.setRotation(attribs.rotation);
   tempAttribs.setScale(attribs.scale);
   tempAttribs.setOffset(attribs.offset);
 
-  auto temp = ParaxialTexCoordSystem(facePlane.normal, tempAttribs);
-  return temp.getTexCoords(point, tempAttribs, vm::vec2f(1.0f, 1.0f));
+  auto temp = ParaxialTexCoordSystem{facePlane.normal, tempAttribs};
+  return temp.getTexCoords(point, tempAttribs, vm::vec2f{1.0f, 1.0f});
 }
 
 static ParaxialAttribs appendOffset(
   const ParaxialAttribsNoOffset& attribs, const vm::vec2f& offset)
 {
-  ParaxialAttribs result;
+  auto result = ParaxialAttribs{};
   result.rotation = attribs.rotate;
   result.scale = attribs.scale;
   result.offset = offset;
   return result;
 }
 
-static float clockwiseDegreesBetween(vm::vec2f start, vm::vec2f end)
+static float clockwiseDegreesBetween(const vm::vec2f& start, const vm::vec2f& end)
 {
-  start = vm::normalize(start);
-  end = vm::normalize(end);
+  const auto startNormalized = vm::normalize(start);
+  const auto endNormalized = vm::normalize(end);
 
-  const float cosAngle = vm::max(-1.0f, vm::min(1.0f, vm::dot(start, end)));
-  const float unsignedDegrees = vm::to_degrees(std::acos(cosAngle));
+  const auto cosAngle = vm::clamp(vm::dot(startNormalized, endNormalized), -1.0f, 1.0f);
+  const auto unsignedDegrees = vm::to_degrees(std::acos(cosAngle));
 
   if (unsignedDegrees < 0.000001f)
   {
@@ -498,11 +467,12 @@ static float clockwiseDegreesBetween(vm::vec2f start, vm::vec2f end)
   // get a normal for the rotation plane using the right-hand rule
   // if this is pointing up (vm::vec3f(0,0,1)), it's counterclockwise rotation.
   // if this is pointing down (vm::vec3f(0,0,-1)), it's clockwise rotation.
-  const vm::vec3f rotationNormal = vm::normalize(
-    vm::cross(vm::vec3f(start[0], start[1], 0.0f), vm::vec3f(end[0], end[1], 0.0f)));
+  const auto rotationNormal = vm::normalize(vm::cross(
+    vm::vec3f{startNormalized[0], startNormalized[1], 0.0f},
+    vm::vec3f{endNormalized[0], endNormalized[1], 0.0f}));
 
-  const float normalsCosAngle = vm::dot(rotationNormal, vm::vec3f(0, 0, 1));
-  if (normalsCosAngle >= 0)
+  const auto normalsCosAngle = vm::dot(rotationNormal, vm::vec3f{0, 0, 1});
+  if (normalsCosAngle >= 0.0f)
   {
     // counterclockwise rotation
     return -unsignedDegrees;
@@ -511,75 +481,63 @@ static float clockwiseDegreesBetween(vm::vec2f start, vm::vec2f end)
   return unsignedDegrees;
 }
 
+static vm::vec2f correctShearing(const vm::vec2f& axis, const vm::vec2f& ortho)
+{
+  const auto degreesToY = clockwiseDegreesBetween(axis, ortho);
+  const auto clockwise = (degreesToY > 0.0f);
+
+  // turn 90 degrees from axis
+  const auto newOrtho = vm::normalize(vm::vec2f{vm::cross(
+    vm::vec3f{0.0f, 0.0f, clockwise ? -1.0f : 1.0f}, vm::vec3f{axis[0], axis[1], 0.0f})});
+
+  // scalar projection of the old ortho vec onto newOrtho to get the new orthoScale
+  const auto newOrthoScale = vm::dot(ortho, newOrtho);
+  return newOrtho * newOrthoScale;
+}
+
+static vm::mat2x2f removeShear(const vm::mat2x2f& M, const bool preserveX)
+{
+  const auto xVec = vm::vec2f{M[0][0], M[1][0]};
+  const auto yVec = vm::vec2f{M[0][1], M[1][1]};
+  const auto cosAngle = vm::dot(vm::normalize(xVec), vm::normalize(yVec));
+
+  if (std::fabs(cosAngle) <= 0.001f)
+  {
+    return M;
+  }
+  // Detected shear
+
+  const auto unshearedXVec = preserveX ? xVec : correctShearing(yVec, xVec);
+  const auto unshearedYVec = preserveX ? correctShearing(xVec, yVec) : yVec;
+
+  // recheck, they should be perpendicular now
+  const auto newCosAngle =
+    vm::dot(vm::normalize(unshearedXVec), vm::normalize(unshearedYVec));
+  assert(fabs(newCosAngle) <= 0.001);
+  unused(newCosAngle);
+
+  return {unshearedXVec[0], unshearedXVec[1], unshearedYVec[0], unshearedYVec[1]};
+}
+
 static std::optional<ParaxialAttribsNoOffset> extractParaxialAttribs(
   vm::mat2x2f M, const vm::plane3& facePlane, const bool preserveX)
 {
   // Check for shear, because we might tweak M to remove it
-  {
-    vm::vec2f Xvec = vm::vec2f(M[0][0], M[1][0]);
-    vm::vec2f Yvec = vm::vec2f(M[0][1], M[1][1]);
-    const float cosAngle = vm::dot(vm::normalize(Xvec), vm::normalize(Yvec));
-
-    if (std::fabs(cosAngle) > 0.001f)
-    {
-      // Detected shear
-
-      if (preserveX)
-      {
-        const float degreesToY = clockwiseDegreesBetween(Xvec, Yvec);
-        const bool clockwise = (degreesToY > 0.0f);
-
-        // turn 90 degrees from Xvec
-        const vm::vec2f newYdir = vm::normalize(vm::vec2f(vm::cross(
-          vm::vec3f(0, 0, clockwise ? -1.0f : 1.0f), vm::vec3f(Xvec[0], Xvec[1], 0.0))));
-
-        // scalar projection of the old Yvec onto newYDir to get the new Yscale
-        const float newYscale = vm::dot(Yvec, newYdir);
-        Yvec = newYdir * static_cast<float>(newYscale);
-      }
-      else
-      {
-        const float degreesToX = clockwiseDegreesBetween(Yvec, Xvec);
-        const bool clockwise = (degreesToX > 0.0f);
-
-        // turn 90 degrees from Yvec
-        const vm::vec2f newXdir = vm::normalize(vm::vec2f(vm::cross(
-          vm::vec3f(0, 0, clockwise ? -1.0f : 1.0f), vm::vec3f(Yvec[0], Yvec[1], 0.0))));
-
-        // scalar projection of the old Xvec onto newXDir to get the new Xscale
-        const float newXscale = vm::dot(Xvec, newXdir);
-        Xvec = newXdir * static_cast<float>(newXscale);
-      }
-
-      // recheck, they should be perpendicular now
-      const float newCosAngle = vm::dot(vm::normalize(Xvec), vm::normalize(Yvec));
-      assert(fabs(newCosAngle) <= 0.001);
-      unused(newCosAngle);
-
-      // update M
-      M[0][0] = Xvec[0];
-      M[1][0] = Xvec[1];
-
-      M[0][1] = Yvec[0];
-      M[1][1] = Yvec[1];
-    }
-  }
+  M = removeShear(M, preserveX);
 
   // extract abs(scale)
-  const double absXScale = sqrt(pow(M[0][0], 2.0) + pow(M[1][0], 2.0));
-  const double absYScale = sqrt(pow(M[0][1], 2.0) + pow(M[1][1], 2.0));
-  const vm::mat2x2f applyAbsScaleM{
-    static_cast<float>(absXScale), 0.0f, 0.0f, static_cast<float>(absYScale)};
+  const auto absXScale = sqrt(pow(M[0][0], 2.0) + pow(M[1][0], 2.0));
+  const auto absYScale = sqrt(pow(M[0][1], 2.0) + pow(M[1][1], 2.0));
+  const auto applyAbsScaleM =
+    vm::mat2x2f{static_cast<float>(absXScale), 0.0f, 0.0f, static_cast<float>(absYScale)};
 
-  vm::vec3f vecs[2];
-  vm::vec3f snappedNormal;
-  textureAxisFromFacePlane(facePlane, vecs[0], vecs[1], snappedNormal);
+  const auto [xAxis, yAxis, snappedNormal] = textureAxisFromFacePlane(facePlane);
 
-  const vm::vec2f sAxis = projectToAxisPlane(snappedNormal, vecs[0]);
-  const vm::vec2f tAxis = projectToAxisPlane(snappedNormal, vecs[1]);
+  const auto sAxis = projectToAxisPlane(snappedNormal, xAxis);
+  const auto tAxis = projectToAxisPlane(snappedNormal, yAxis);
 
   // This is an identity matrix possibly with negative signs.
-  const vm::mat2x2f axisFlipsM{sAxis[0], sAxis[1], tAxis[0], tAxis[1]};
+  const auto axisFlipsM = vm::mat2x2f{sAxis[0], sAxis[1], tAxis[0], tAxis[1]};
 
   // M can be built like this and the orider guides how we
   // strip off components of it later in this function.
@@ -595,10 +553,10 @@ static std::optional<ParaxialAttribsNoOffset> extractParaxialAttribs(
     return std::nullopt;
   }
 
-  const vm::mat2x2f flipRotate = applyAbsScaleMInv * M * axisFlipsMInv;
+  const auto flipRotate = applyAbsScaleMInv * M * axisFlipsMInv;
 
-  // We don't know the signs on the scales, which will mess up figuring out the rotation,
-  // so try all 4 combinations
+  // We don't know the signs on the scales, which will mess up figuring out the
+  // rotation, so try all 4 combinations
   static const std::array<float, 2> negativeOneAndOne{-1.0, 1.0};
   for (const float xScaleSign : negativeOneAndOne)
   {
@@ -607,18 +565,18 @@ static std::optional<ParaxialAttribsNoOffset> extractParaxialAttribs(
       // "apply" - matrix constructed to apply a guessed value
       // "guess" - this matrix might not be what we think
 
-      const vm::mat2x2f applyGuessedFlipM{xScaleSign, 0, 0, yScaleSign};
+      const auto applyGuessedFlipM = vm::mat2x2f{xScaleSign, 0.0f, 0.0f, yScaleSign};
 
       auto [invOk, inv] = vm::invert(applyGuessedFlipM);
       if (!invOk)
       {
         continue;
       }
-      const vm::mat2x2f rotateMGuess = inv * flipRotate;
+      const auto rotateMGuess = inv * flipRotate;
       const float angleGuess = mat2x2_extract_rotation_degrees(rotateMGuess);
 
-      const vm::mat2x2f applyAngleGuessM = mat2x2_rotation_degrees(angleGuess);
-      const vm::mat2x2f Mguess =
+      const auto applyAngleGuessM = mat2x2_rotation_degrees(angleGuess);
+      const auto Mguess =
         applyGuessedFlipM * applyAbsScaleM * applyAngleGuessM * axisFlipsM;
 
       if (
@@ -628,7 +586,7 @@ static std::optional<ParaxialAttribsNoOffset> extractParaxialAttribs(
         && std::fabs(M[1][1] - Mguess[1][1]) < 0.001f)
       {
 
-        ParaxialAttribsNoOffset reversed;
+        auto reversed = ParaxialAttribsNoOffset{};
         reversed.rotate = angleGuess;
         reversed.scale[0] = xScaleSign / static_cast<float>(absXScale);
         reversed.scale[1] = yScaleSign / static_cast<float>(absYScale);
@@ -641,35 +599,34 @@ static std::optional<ParaxialAttribsNoOffset> extractParaxialAttribs(
 }
 
 static std::optional<ParaxialAttribs> texCoordMatrixToParaxial(
-  const vm::plane3& faceplane,
+  const vm::plane3& facePlane,
   const vm::mat4x4f& worldToTexSpace,
   const std::array<vm::vec3f, 3>& facePoints)
 {
   // First get the un-rotated, un-scaled unit texture vecs (based on the face plane).
-  vm::vec3f snappedNormal;
-  vm::vec3f unrotatedVecs[2];
-  textureAxisFromFacePlane(faceplane, unrotatedVecs[0], unrotatedVecs[1], snappedNormal);
+  const auto [unrotatedXVec, unrotatedYVec, snappedNormal] =
+    textureAxisFromFacePlane(facePlane);
 
   // Grab the UVs of the 3 reference points
-  vm::vec2f facepointsUVs[3];
-  for (size_t i = 0; i < 3; ++i)
-  {
-    facepointsUVs[i] = vm::vec2f(worldToTexSpace * vm::vec4f(facePoints[i], 1.0f));
-  }
+  const auto facePointsUVs = std::array<vm::vec2f, 3>{
+    vm::vec2f{worldToTexSpace * vm::vec4f{facePoints[0], 1.0f}},
+    vm::vec2f{worldToTexSpace * vm::vec4f{facePoints[1], 1.0f}},
+    vm::vec2f{worldToTexSpace * vm::vec4f{facePoints[2], 1.0f}},
+  };
 
   // Project the 3 reference points onto the axis plane. They are now 2d points.
-  vm::vec2f facepointsProjected[3];
-  for (size_t i = 0; i < 3; ++i)
-  {
-    facepointsProjected[i] = projectToAxisPlane(snappedNormal, facePoints[i]);
-  }
+  const auto facePointsProjected = std::array<vm::vec2f, 3>{
+    projectToAxisPlane(snappedNormal, facePoints[0]),
+    projectToAxisPlane(snappedNormal, facePoints[1]),
+    projectToAxisPlane(snappedNormal, facePoints[2]),
+  };
 
   // Now make 2 vectors out of our 3 points (so we are ignoring translation for now)
-  const vm::vec2f p0p1 = facepointsProjected[1] - facepointsProjected[0];
-  const vm::vec2f p0p2 = facepointsProjected[2] - facepointsProjected[0];
+  const auto p0p1 = facePointsProjected[1] - facePointsProjected[0];
+  const auto p0p2 = facePointsProjected[2] - facePointsProjected[0];
 
-  const vm::vec2f p0p1UV = facepointsUVs[1] - facepointsUVs[0];
-  const vm::vec2f p0p2UV = facepointsUVs[2] - facepointsUVs[0];
+  const auto p0p1UV = facePointsUVs[1] - facePointsUVs[0];
+  const auto p0p2UV = facePointsUVs[2] - facePointsUVs[0];
 
   /*
   Find a 2x2 transformation matrix that maps p0p1 to p0p1UV, and p0p2 to p0p2UV
@@ -695,7 +652,7 @@ static std::optional<ParaxialAttribs> texCoordMatrixToParaxial(
      [ p0p2UV.y ]   [ 0       0     p0p2.x p0p2.y  ] [ d ]
 
    */
-  const vm::mat4x4f M{
+  const auto M = vm::mat4x4f{
     p0p1[0],
     p0p1[1],
     0.0f,
@@ -718,11 +675,11 @@ static std::optional<ParaxialAttribs> texCoordMatrixToParaxial(
   {
     return std::nullopt;
   }
-  const vm::vec4f abcd = Minv * vm::vec4f(p0p1UV[0], p0p1UV[1], p0p2UV[0], p0p2UV[1]);
 
-  const vm::mat2x2f texPlaneToUV{abcd[0], abcd[1], abcd[2], abcd[3]};
+  const auto abcd = Minv * vm::vec4f{p0p1UV[0], p0p1UV[1], p0p2UV[0], p0p2UV[1]};
+  const auto texPlaneToUV = vm::mat2x2f{abcd[0], abcd[1], abcd[2], abcd[3]};
 
-  const auto result = extractParaxialAttribs(texPlaneToUV, faceplane, false);
+  const auto result = extractParaxialAttribs(texPlaneToUV, facePlane, false);
   if (!result.has_value())
   {
     return std::nullopt;
@@ -730,13 +687,14 @@ static std::optional<ParaxialAttribs> texCoordMatrixToParaxial(
 
   // figure out texture offset by testing one point.
   // NOTE: the choice of point shouldn't matter in the case when the conversion is
-  // lossless (no shearing). However, if there is shearing (which we can't capture in the
-  // paraxial format), this test point should be somewhere on the face, because the
+  // lossless (no shearing). However, if there is shearing (which we can't capture in
+  // the paraxial format), this test point should be somewhere on the face, because the
   // texture may only be aligned properly around this point.
-  const vm::vec3f testPoint = facePoints[0];
-  const vm::vec2f testActualUV = getTexCoordsAtPoint(
-    appendOffset(*result, vm::vec2f(0, 0)), faceplane, vm::vec3(testPoint));
-  const vm::vec2f testDesiredUV = vm::vec2f(worldToTexSpace * vm::vec4f(testPoint, 1.0f));
+  const auto testPoint = facePoints[0];
+  const auto testActualUV = getTexCoordsAtPoint(
+    appendOffset(*result, vm::vec2f{0, 0}), facePlane, vm::vec3{testPoint});
+
+  const auto testDesiredUV = vm::vec2f{worldToTexSpace * vm::vec4f{testPoint, 1.0f}};
   return appendOffset(*result, testDesiredUV - testActualUV);
 }
 
@@ -758,7 +716,7 @@ static vm::mat4x4f valveTo4x4Matrix(
   const vm::vec3& xAxis,
   const vm::vec3& yAxis)
 {
-  vm::mat4x4f result;
+  auto result = vm::mat4x4f{};
 
   // fill in columns 0..2
   for (size_t i = 0; i < 3; ++i)
@@ -788,16 +746,16 @@ std::tuple<std::unique_ptr<TexCoordSystem>, BrushFaceAttributes> ParaxialTexCoor
     const vm::vec3& xAxis,
     const vm::vec3& yAxis)
 {
-  const vm::plane3 facePlane = planeFromPoints(point0, point1, point2);
-  const vm::mat4x4f worldToTexSpace =
+  const auto facePlane = planeFromPoints(point0, point1, point2);
+  const auto worldToTexSpace =
     FromParallel::valveTo4x4Matrix(facePlane, attribs, xAxis, yAxis);
   const auto facePoints =
-    std::array<vm::vec3f, 3>{vm::vec3f(point0), vm::vec3f(point1), vm::vec3f(point2)};
+    std::array<vm::vec3f, 3>{vm::vec3f{point0}, vm::vec3f{point1}, vm::vec3f{point2}};
 
   const auto conversionResult =
     FromParallel::texCoordMatrixToParaxial(facePlane, worldToTexSpace, facePoints);
 
-  BrushFaceAttributes newAttribs = attribs;
+  auto newAttribs = attribs;
   if (conversionResult.has_value())
   {
     newAttribs.setOffset(conversionResult->offset);

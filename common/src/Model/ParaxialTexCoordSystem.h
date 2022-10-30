@@ -50,9 +50,7 @@ public:
   ParaxialTexCoordSystem(size_t index, const vm::vec3& xAxis, const vm::vec3& yAxis);
 
   static size_t planeNormalIndex(const vm::vec3& normal);
-  static void axes(size_t index, vm::vec3& xAxis, vm::vec3& yAxis);
-  static void axes(
-    size_t index, vm::vec3& xAxis, vm::vec3& yAxis, vm::vec3& projectionAxis);
+  static std::tuple<vm::vec3, vm::vec3, vm::vec3> axes(size_t index);
   static vm::plane3 planeFromPoints(
     const vm::vec3& point0, const vm::vec3& point1, const vm::vec3& point2);
 

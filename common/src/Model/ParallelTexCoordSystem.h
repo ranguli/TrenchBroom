@@ -41,7 +41,7 @@ private:
 
 public:
   ParallelTexCoordSystemSnapshot(const vm::vec3& xAxis, const vm::vec3& yAxis);
-  ParallelTexCoordSystemSnapshot(const ParallelTexCoordSystem* coordSystem);
+  explicit ParallelTexCoordSystemSnapshot(const ParallelTexCoordSystem& coordSystem);
 
 private:
   std::unique_ptr<TexCoordSystemSnapshot> doClone() const override;
