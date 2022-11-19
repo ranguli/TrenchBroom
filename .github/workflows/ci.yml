@@ -25,9 +25,14 @@ jobs:
         exclude:
           - os: windows-2019
             tb-arch: default-arch
+          - os: macos-11
+            tb-arch: default-arch
         include:
           - os: macos-11
             tb-build-type: asan
+            tb-arch: x64
+          - os: macos-11
+            tb-arch: arm64
           - os: windows-2019
             tb-arch: x64
           - os: windows-2019
@@ -136,6 +141,8 @@ jobs:
             export TB_DEBUG_BUILD=true
           fi
           ./CI-macos.sh
+        env:
+          TB_ARCH: ${{ matrix.tb-arch }}
 
       - name: Windows build
         if: ${{ matrix.os == 'windows-2019' }}
@@ -184,12 +191,21 @@ jobs:
             build/*.rpm
             build/*.md5
 
-      # macOS
-      - name: Upload macOS artifact
+      # macOS x64
+      - name: Upload macOS x64 artifact
         uses: actions/upload-artifact@v3
-        if: ${{ matrix.os == 'macos-11' && matrix.tb-build-type != 'asan' }}
+        if: ${{ matrix.os == 'macos-11' && matrix.tb-build-type != 'asan' && matrix.tb-arch == 'x64' }}
         with:
-          name: macos
+          name: macos-x64
+          path: |
+            build/*.dmg
+            build/*.md5
+
+      - name: Upload macOS arm64 artifact
+        uses: actions/upload-artifact@v3
+        if: ${{ matrix.os == 'macos-11' && matrix.tb-build-type != 'asan' && matrix.tb-arch == 'arm64' }}
+        with:
+          name: macos-arm64
           path: |
             build/*.dmg
             build/*.md5
