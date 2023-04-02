@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
   }
 
   QTextStream out(&file);
-  out.setCodec("UTF-8");
+  out.setEncoding(QStringConverter::Utf8);
 
   TrenchBroom::PreferenceManager::createInstance<TrenchBroom::AppPreferenceManager>();
 

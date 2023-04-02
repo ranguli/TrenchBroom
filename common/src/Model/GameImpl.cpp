@@ -387,8 +387,7 @@ std::vector<IO::Path> GameImpl::doFindTextureCollections() const
     {
       return kdl::vec_concat(
         std::vector<IO::Path>{searchPath},
-        m_fs.findItemsRecursively(
-          searchPath, IO::FileTypeMatcher{!true(files), true(directories)}));
+        m_fs.findItemsRecursively(searchPath, IO::FileTypeMatcher{false, true}));
     }
     return {};
   }
@@ -683,8 +682,7 @@ std::vector<std::string> GameImpl::doAvailableMods() const
   const auto& defaultMod =
     m_config.fileSystemConfig.searchPath.lastComponent().asString();
   const auto fs = IO::DiskFileSystem{m_gamePath};
-  const auto subDirs =
-    fs.findItems(IO::Path{}, IO::FileTypeMatcher{!true(files), true(directories)});
+  const auto subDirs = fs.findItems(IO::Path{}, IO::FileTypeMatcher{false, true});
   for (const auto& subDir : subDirs)
   {
     const auto mod = subDir.lastComponent().asString();

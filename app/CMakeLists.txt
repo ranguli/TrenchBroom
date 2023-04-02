@@ -138,7 +138,7 @@ macro(configure_app_target APP_TARGET_NAME SHOULD_BUILD_MANUAL)
             message(STATUS "macdeployqt requested")
 
             # Get macdeployqt path (hack)
-            get_target_property(TB_QMAKE_PATH Qt5::qmake IMPORTED_LOCATION)
+            get_target_property(TB_QMAKE_PATH Qt6::qmake IMPORTED_LOCATION)
             string(REPLACE "qmake" "macdeployqt" TB_MACDEPLOYQT_PATH "${TB_QMAKE_PATH}")
 
             add_custom_command(TARGET ${APP_TARGET_NAME} POST_BUILD
@@ -163,14 +163,14 @@ macro(configure_app_target APP_TARGET_NAME SHOULD_BUILD_MANUAL)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:miniz::miniz>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:fmt::fmt>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GLEW::GLEW>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Widgets>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Gui>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Core>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::Svg>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt6::Widgets>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt6::Gui>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt6::Core>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt6::Svg>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>"
                 COMMAND ${CMAKE_COMMAND} -E make_directory    "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>/platforms"
                 COMMAND ${CMAKE_COMMAND} -E make_directory    "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>/styles"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::QWindowsIntegrationPlugin>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>/platforms"
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt5::QWindowsVistaStylePlugin>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>/styles")
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>/platforms"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:Qt6::QWindowsVistaStylePlugin>" "$<TARGET_FILE_DIR:${APP_TARGET_NAME}>/styles")
     endif()
 
     # Generate a small stripped PDB for release builds so we get stack traces with symbols
@@ -300,10 +300,10 @@ if(WIN32)
 
     #Qt plugins
     install(FILES
-            $<TARGET_FILE:Qt5::QWindowsIntegrationPlugin>
+            $<TARGET_FILE:Qt6::QWindowsIntegrationPlugin>
             DESTINATION platforms COMPONENT TrenchBroom)
     install(FILES
-            $<TARGET_FILE:Qt5::QWindowsVistaStylePlugin>
+            $<TARGET_FILE:Qt6::QWindowsVistaStylePlugin>
             DESTINATION styles COMPONENT TrenchBroom)
 
     #Manual

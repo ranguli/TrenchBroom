@@ -86,10 +86,9 @@ TEST_CASE("EntityTest.setDefaultProperties")
     vm::bbox3{32.0},
     "",
     {
+      std::make_shared<Assets::StringPropertyDefinition>("some_prop", "", "", false),
       std::make_shared<Assets::StringPropertyDefinition>(
-        "some_prop", "", "", !true(readOnly)),
-      std::make_shared<Assets::StringPropertyDefinition>(
-        "some_default_prop", "", "", !true(readOnly), "value"),
+        "some_default_prop", "", "", false, "value"),
     },
     {}};
 

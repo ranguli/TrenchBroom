@@ -459,7 +459,7 @@ TEST_CASE_METHOD(MapDocumentTest, "createPointEntity")
   {
     // set up a document with an entity config having setDefaultProperties set to true
     game->setWorldNodeToLoad(std::make_unique<Model::WorldNode>(
-      Model::EntityPropertyConfig{{}, true(setDefaultProperties)},
+      Model::EntityPropertyConfig{{}, true},
       Model::Entity{},
       Model::MapFormat::Standard));
     document->loadDocument(
@@ -472,7 +472,7 @@ TEST_CASE_METHOD(MapDocumentTest, "createPointEntity")
       "",
       {
         std::make_shared<Assets::StringPropertyDefinition>(
-          "some_default_prop", "", "", !true(readOnly), "value"),
+          "some_default_prop", "", "", false, "value"),
       },
       {}};
     document->setEntityDefinitions({definitionWithDefaults});
@@ -531,7 +531,7 @@ TEST_CASE_METHOD(MapDocumentTest, "createBrushEntity")
   {
     // set up a document with an entity config having setDefaultProperties set to true
     game->setWorldNodeToLoad(std::make_unique<Model::WorldNode>(
-      Model::EntityPropertyConfig{{}, true(setDefaultProperties)},
+      Model::EntityPropertyConfig{{}, true},
       Model::Entity{},
       Model::MapFormat::Standard));
     document->loadDocument(
@@ -543,7 +543,7 @@ TEST_CASE_METHOD(MapDocumentTest, "createBrushEntity")
       "",
       {
         std::make_shared<Assets::StringPropertyDefinition>(
-          "some_default_prop", "", "", !true(readOnly), "value"),
+          "some_default_prop", "", "", false, "value"),
       }};
     document->setEntityDefinitions({definitionWithDefaults});
 
@@ -574,12 +574,11 @@ TEST_CASE_METHOD(MapDocumentTest, "resetDefaultProperties")
     vm::bbox3{32.0},
     "",
     {
+      std::make_shared<Assets::StringPropertyDefinition>("some_prop", "", "", false),
       std::make_shared<Assets::StringPropertyDefinition>(
-        "some_prop", "", "", !true(readOnly)),
+        "default_prop_a", "", "", false, "default_value_a"),
       std::make_shared<Assets::StringPropertyDefinition>(
-        "default_prop_a", "", "", !true(readOnly), "default_value_a"),
-      std::make_shared<Assets::StringPropertyDefinition>(
-        "default_prop_b", "", "", !true(readOnly), "default_value_b"),
+        "default_prop_b", "", "", false, "default_value_b"),
     },
     {}};
   document->setEntityDefinitions({definitionWithDefaults});

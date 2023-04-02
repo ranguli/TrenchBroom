@@ -133,7 +133,7 @@ void RotateObjectsToolPage::createGui()
 
   connect(
     m_recentlyUsedCentersList,
-    QOverload<const QString&>::of(&QComboBox::activated),
+    &QComboBox::textActivated,
     this,
     &RotateObjectsToolPage::centerChanged);
   connect(

@@ -47,7 +47,7 @@ namespace TrenchBroom
 namespace View
 {
 CreateEntityTool::CreateEntityTool(std::weak_ptr<MapDocument> document)
-  : Tool{true(initiallyActive)}
+  : Tool{true}
   , m_document{std::move(document)}
   , m_entity{nullptr}
 {

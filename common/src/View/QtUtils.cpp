@@ -216,7 +216,7 @@ void centerOnScreen(QWidget* window)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
   const auto* screen =
-    QGuiApplication::screenAt(window->mapToGlobal({window->width() / 2, 0}));
+    QGuiApplication::screenAt(window->mapToGlobal(QPoint{window->width() / 2, 0}));
   if (screen == nullptr)
   {
     return;

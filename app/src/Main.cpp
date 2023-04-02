@@ -48,8 +48,8 @@ int main(int argc, char* argv[])
   QSettings::setDefaultFormat(QSettings::IniFormat);
 
   // Set up Hi DPI scaling
-  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+  //  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  //  QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
   // Enables non-integer scaling (e.g. 150% scaling on Windows)
   QGuiApplication::setHighDpiScaleFactorRoundingPolicy(

@@ -21,7 +21,7 @@
 
 #include <QApplication>
 #include <QDebug>
-#include <QDesktopWidget>
+#include <QScreen>
 #include <QWindow>
 
 namespace TrenchBroom
@@ -37,7 +37,9 @@ PopupWindow::PopupWindow(QWidget* parent)
 
 void PopupWindow::positionTouchingWidget(QWidget* refWidget)
 {
-  const QRect screenGeom = QApplication::desktop()->availableGeometry(refWidget);
+  const QScreen* screen =
+    QGuiApplication::screenAt(refWidget->mapToGlobal(QPoint{refWidget->width() / 2, 0}));
+  const QRect screenGeom = screen->availableGeometry();
   const QRect refWidgetRectOnScreen =
     QRect(refWidget->mapToGlobal(QPoint(0, 0)), refWidget->size());
   const QSize ourSize = size();
