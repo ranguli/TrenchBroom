@@ -75,6 +75,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/IO/NodeWriter.cpp
         ${COMMON_SOURCE_DIR}/IO/ObjParser.cpp
         ${COMMON_SOURCE_DIR}/IO/ObjSerializer.cpp
+        ${COMMON_SOURCE_DIR}/IO/PakFileSystem.cpp
         ${COMMON_SOURCE_DIR}/IO/ParserStatus.cpp
         ${COMMON_SOURCE_DIR}/IO/Path.cpp
         ${COMMON_SOURCE_DIR}/IO/PathInfo.cpp
@@ -559,6 +560,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/IO/NodeWriter.h
         ${COMMON_SOURCE_DIR}/IO/ObjParser.h
         ${COMMON_SOURCE_DIR}/IO/ObjSerializer.h
+        ${COMMON_SOURCE_DIR}/IO/PakFileSystem.h
         ${COMMON_SOURCE_DIR}/IO/Parser.h
         ${COMMON_SOURCE_DIR}/IO/ParserStatus.h
         ${COMMON_SOURCE_DIR}/IO/Path.h

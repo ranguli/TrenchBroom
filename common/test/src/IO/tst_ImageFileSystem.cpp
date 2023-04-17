@@ -22,6 +22,7 @@
 #include "IO/DkPakFileSystem.h"
 #include "IO/File.h"
 #include "IO/IdPakFileSystem.h"
+#include "IO/PakFileSystem.h"
 #include "IO/PathInfo.h"
 #include "IO/WadFileSystem.h"
 #include "IO/ZipFileSystem.h"
@@ -818,13 +819,19 @@ TEST_CASE("Hierarchical ImageFileSystems")
 {
   const auto fsTestPath = Disk::getCurrentWorkingDir() + Path{"fixture/test/IO/"};
   const auto [name, fs] =
-    GENERATE_REF(values<std::tuple<std::string, std::shared_ptr<FileSystem>>>({
+    GENERATE_COPY(values<std::tuple<std::string, std::shared_ptr<FileSystem>>>({
       {"IdPakFileSystem",
        std::shared_ptr<FileSystem>{
          new IdPakFileSystem{fsTestPath + Path{"Pak/idpak.pak"}}}},
       {"DkPakFileSystem",
        std::shared_ptr<FileSystem>{
          new DkPakFileSystem{fsTestPath + Path{"Pak/dkpak.pak"}}}},
+      {"PakFileSystem (Id)",
+       std::shared_ptr<FileSystem>{
+         new PakFileSystem{fsTestPath + Path{"Pak/idpak.pak"}}}},
+      {"PakFileSystem (Daikatana)",
+       std::shared_ptr<FileSystem>{
+         new PakFileSystem{fsTestPath + Path{"Pak/dkpak.pak"}}}},
       {"ZipFileSystem",
        std::shared_ptr<FileSystem>{new ZipFileSystem{fsTestPath + Path{"Zip/zip.zip"}}}},
     }));
