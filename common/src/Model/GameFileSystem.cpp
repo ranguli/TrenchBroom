@@ -22,8 +22,7 @@
 #include "Exceptions.h"
 #include "IO/DiskFileSystem.h"
 #include "IO/DiskIO.h"
-#include "IO/DkPakFileSystem.h"
-#include "IO/IdPakFileSystem.h"
+#include "IO/PakFileSystem.h"
 #include "IO/PathInfo.h"
 #include "IO/Quake3ShaderFileSystem.h"
 #include "IO/SystemPaths.h"
@@ -163,19 +162,18 @@ void GameFileSystem::addFileSystemPackages(
       try
       {
         const auto absPackagePath = diskFS.makeAbsolute(packagePath);
-        if (kdl::ci::str_is_equal(packageFormat, "idpak"))
+        if (
+          kdl::ci::str_is_equal(packageFormat, "idpak")
+          || kdl::ci::str_is_equal(packageFormat, "dkpak"))
         {
-          logger.info() << "Adding file system package " << packagePath;
-          mount(IO::Path{}, std::make_unique<IO::IdPakFileSystem>(absPackagePath));
-        }
-        else if (kdl::ci::str_is_equal(packageFormat, "dkpak"))
-        {
-          logger.info() << "Adding file system package " << packagePath;
-          mount(IO::Path{}, std::make_unique<IO::DkPakFileSystem>(absPackagePath));
+          auto pakFS = std::make_unique<IO::PakFileSystem>(absPackagePath);
+          logger.info() << "Adding file system package " << packagePath << " as type "
+                        << pakFS->type();
+          mount(IO::Path{}, std::move(pakFS));
         }
         else if (kdl::ci::str_is_equal(packageFormat, "zip"))
         {
-          logger.info() << "Adding file system package " << packagePath;
+          logger.info() << "Adding file system package " << packagePath << "as type zip";
           mount(IO::Path{}, std::make_unique<IO::ZipFileSystem>(absPackagePath));
         }
       }
