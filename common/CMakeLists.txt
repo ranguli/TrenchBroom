@@ -39,7 +39,6 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/IO/DiskFileSystem.cpp
         ${COMMON_SOURCE_DIR}/IO/DiskIO.cpp
         ${COMMON_SOURCE_DIR}/IO/DkmParser.cpp
-        ${COMMON_SOURCE_DIR}/IO/DkPakFileSystem.cpp
         ${COMMON_SOURCE_DIR}/IO/ELParser.cpp
         ${COMMON_SOURCE_DIR}/IO/EntityDefinitionClassInfo.cpp
         ${COMMON_SOURCE_DIR}/IO/EntityDefinitionLoader.cpp
@@ -55,7 +54,6 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/IO/GameConfigParser.cpp
         ${COMMON_SOURCE_DIR}/IO/GameEngineConfigParser.cpp
         ${COMMON_SOURCE_DIR}/IO/GameEngineConfigWriter.cpp
-        ${COMMON_SOURCE_DIR}/IO/IdPakFileSystem.cpp
         ${COMMON_SOURCE_DIR}/IO/ImageFileSystem.cpp
         ${COMMON_SOURCE_DIR}/IO/ImageLoader.cpp
         ${COMMON_SOURCE_DIR}/IO/ImageLoaderImpl.cpp
@@ -524,7 +522,6 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/IO/DiskFileSystem.h
         ${COMMON_SOURCE_DIR}/IO/DiskIO.h
         ${COMMON_SOURCE_DIR}/IO/DkmParser.h
-        ${COMMON_SOURCE_DIR}/IO/DkPakFileSystem.h
         ${COMMON_SOURCE_DIR}/IO/ELParser.h
         ${COMMON_SOURCE_DIR}/IO/EntityDefinitionClassInfo.h
         ${COMMON_SOURCE_DIR}/IO/EntityDefinitionLoader.h
@@ -540,7 +537,6 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/IO/GameConfigParser.h
         ${COMMON_SOURCE_DIR}/IO/GameEngineConfigParser.h
         ${COMMON_SOURCE_DIR}/IO/GameEngineConfigWriter.h
-        ${COMMON_SOURCE_DIR}/IO/IdPakFileSystem.h
         ${COMMON_SOURCE_DIR}/IO/ImageFileSystem.h
         ${COMMON_SOURCE_DIR}/IO/ImageLoader.h
         ${COMMON_SOURCE_DIR}/IO/ImageLoaderImpl.h
