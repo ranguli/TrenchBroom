@@ -66,8 +66,7 @@ private:
     Logger& logger);
   void addShaderFileSystem(const GameConfig& config, Logger& logger);
   void addFileSystemPath(const IO::Path& path, Logger& logger);
-  void addFileSystemPackages(
-    const GameConfig& config, const IO::Path& searchPath, Logger& logger);
+  void addFileSystemPackages(const IO::Path& searchPath, Logger& logger);
 
   void mountWads(
     const IO::Path& rootPath,

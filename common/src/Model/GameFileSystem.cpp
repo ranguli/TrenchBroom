@@ -118,12 +118,12 @@ void GameFileSystem::addGameFileSystems(
 {
   const auto& fileSystemConfig = config.fileSystemConfig;
   addFileSystemPath(gamePath + fileSystemConfig.searchPath, logger);
-  addFileSystemPackages(config, gamePath + fileSystemConfig.searchPath, logger);
+  addFileSystemPackages(gamePath + fileSystemConfig.searchPath, logger);
 
   for (const auto& searchPath : additionalSearchPaths)
   {
     addFileSystemPath(gamePath + searchPath, logger);
-    addFileSystemPackages(config, gamePath + searchPath, logger);
+    addFileSystemPackages(gamePath + searchPath, logger);
   }
 }
 
@@ -141,20 +141,12 @@ void GameFileSystem::addFileSystemPath(const IO::Path& path, Logger& logger)
   }
 }
 
-void GameFileSystem::addFileSystemPackages(
-  const GameConfig& config, const IO::Path& searchPath, Logger& logger)
+void GameFileSystem::addFileSystemPackages(const IO::Path& searchPath, Logger& logger)
 {
-  const auto& fileSystemConfig = config.fileSystemConfig;
-  const auto& packageFormatConfig = fileSystemConfig.packageFormat;
-
-  const auto& packageExtensions = packageFormatConfig.extensions;
-  const auto& packageFormat = packageFormatConfig.format;
-
   if (IO::Disk::pathInfo(searchPath) == IO::PathInfo::Directory)
   {
     const auto diskFS = IO::DiskFileSystem{searchPath};
-    auto packages =
-      diskFS.find(IO::Path{}, IO::makeExtensionPathMatcher(packageExtensions));
+    auto packages = diskFS.find(IO::Path{}, IO::makeExtensionPathMatcher({"pak", "pk3"}));
     packages = kdl::vec_sort(std::move(packages), IO::Path::Less<kdl::ci::string_less>{});
 
     for (const auto& packagePath : packages)
@@ -162,16 +154,14 @@ void GameFileSystem::addFileSystemPackages(
       try
       {
         const auto absPackagePath = diskFS.makeAbsolute(packagePath);
-        if (
-          kdl::ci::str_is_equal(packageFormat, "idpak")
-          || kdl::ci::str_is_equal(packageFormat, "dkpak"))
+        if (packagePath.hasExtension("pak", false))
         {
           auto pakFS = std::make_unique<IO::PakFileSystem>(absPackagePath);
           logger.info() << "Adding file system package " << packagePath << " as type "
                         << pakFS->type();
           mount(IO::Path{}, std::move(pakFS));
         }
-        else if (kdl::ci::str_is_equal(packageFormat, "zip"))
+        else if (packagePath.hasExtension("pk3", false))
         {
           logger.info() << "Adding file system package " << packagePath << "as type zip";
           mount(IO::Path{}, std::make_unique<IO::ZipFileSystem>(absPackagePath));
