@@ -31,18 +31,16 @@
 #include <ostream>
 #include <string>
 
-namespace TrenchBroom
-{
-namespace IO
+namespace TrenchBroom::IO
 {
 static constexpr std::string_view separators()
 {
   return std::string_view("/\\");
 }
 
-Path::Path(bool absolute, const std::vector<std::string>& components)
-  : m_components(components)
-  , m_absolute(absolute)
+Path::Path(bool absolute, std::vector<std::string> components)
+  : m_components{std::move(components)}
+  , m_absolute{absolute}
 {
 }
 
@@ -68,7 +66,7 @@ Path Path::operator+(const Path& rhs) const
   auto components = m_components;
   components.insert(
     std::end(components), std::begin(rhs.m_components), std::end(rhs.m_components));
-  return Path(m_absolute, components);
+  return Path{m_absolute, std::move(components)};
 }
 
 int Path::compare(const Path& rhs, const bool caseSensitive) const
@@ -171,13 +169,7 @@ std::vector<std::string> Path::asStrings(
 
 std::vector<Path> Path::asPaths(const std::vector<std::string>& strs)
 {
-  auto result = std::vector<Path>();
-  result.reserve(strs.size());
-  for (const auto& str : strs)
-  {
-    result.push_back(Path(str));
-  }
-  return result;
+  return kdl::vec_transform(strs, [](const auto& str) { return Path{str}; });
 }
 
 size_t Path::length() const
@@ -199,18 +191,18 @@ Path Path::firstComponent() const
 
   if (!m_absolute)
   {
-    return Path(m_components.front());
+    return Path{m_components.front()};
   }
 
 #ifdef _WIN32
   if (hasDriveSpec(m_components))
   {
-    return Path(m_components.front());
+    return Path{m_components.front()};
   }
 
-  return Path("\\");
+  return Path{"\\"};
 #else
-  return Path("/");
+  return Path{"/"};
 #endif
 }
 
@@ -226,7 +218,7 @@ Path Path::deleteFirstComponent() const
     components.reserve(m_components.size() - 1);
     components.insert(
       std::begin(components), std::begin(m_components) + 1, std::end(m_components));
-    return Path(false, components);
+    return Path{false, std::move(components)};
   }
 #ifdef _WIN32
   if (!m_components.empty() && hasDriveSpec(m_components[0]))
@@ -235,11 +227,11 @@ Path Path::deleteFirstComponent() const
     components.reserve(m_components.size() - 1);
     components.insert(
       std::begin(components), std::begin(m_components) + 1, std::end(m_components));
-    return Path(false, components);
+    return Path{false, std::move(components)};
   }
-  return Path(false, m_components);
+  return Path{false, m_components};
 #else
-  return Path(false, m_components);
+  return Path{false, m_components};
 #endif
 }
 
@@ -249,11 +241,11 @@ Path Path::lastComponent() const
     throw PathException("Cannot return last component of empty path");
   if (!m_components.empty())
   {
-    return Path(m_components.back());
+    return Path{m_components.back()};
   }
   else
   {
-    return Path("");
+    return Path{};
   }
 }
 
@@ -270,11 +262,11 @@ Path Path::deleteLastComponent() const
     components.reserve(m_components.size() - 1);
     components.insert(
       std::begin(components), std::begin(m_components), std::end(m_components) - 1);
-    return Path(m_absolute, components);
+    return Path{m_absolute, std::move(components)};
   }
   else
   {
-    return Path(m_absolute, m_components);
+    return Path{m_absolute, m_components};
   }
 }
 
@@ -297,7 +289,7 @@ Path Path::subPath(const size_t index, const size_t count) const
 
   if (count == 0)
   {
-    return Path("");
+    return Path{};
   }
 
   auto newComponents = std::vector<std::string>();
@@ -306,7 +298,7 @@ Path Path::subPath(const size_t index, const size_t count) const
   {
     newComponents.push_back(m_components[index + i]);
   }
-  return Path(m_absolute && index == 0, newComponents);
+  return Path{m_absolute && index == 0, std::move(newComponents)};
 }
 
 const std::vector<std::string>& Path::components() const
@@ -465,7 +457,7 @@ Path Path::deleteExtension() const
   {
     return *this;
   }
-  return deleteLastComponent() + Path(basename());
+  return deleteLastComponent() + Path{basename()};
 }
 
 Path Path::addExtension(const std::string& extension) const
@@ -489,7 +481,7 @@ Path Path::addExtension(const std::string& extension) const
   {
     components.back() += "." + extension;
   }
-  return Path(m_absolute, components);
+  return Path{m_absolute, std::move(components)};
 }
 
 Path Path::replaceExtension(const std::string& extension) const
@@ -503,7 +495,7 @@ Path Path::replaceBasename(const std::string& basename) const
   {
     throw PathException("Cannot replace the base name of an empty path.");
   }
-  return deleteLastComponent() + IO::Path(basename).addExtension(extension());
+  return deleteLastComponent() + Path{basename}.addExtension(extension());
 }
 
 bool Path::isAbsolute() const
@@ -556,9 +548,9 @@ Path Path::makeRelative() const
       "Cannot make relative path from an reference path with no drive spec");
   }
 
-  return Path(false, kdl::vec_slice_suffix(m_components, m_components.size() - 1u));
+  return Path{false, kdl::vec_slice_suffix(m_components, m_components.size() - 1u)};
 #else
-  return Path(false, m_components);
+  return Path{false, m_components};
 #endif
 }
 
@@ -620,19 +612,19 @@ Path Path::makeRelative(const Path& absolutePath) const
   auto components = std::vector<std::string>();
   for (size_t i = p; i < myResolved.size(); ++i)
   {
-    components.push_back("..");
+    components.emplace_back("..");
   }
   for (size_t i = p; i < theirResolved.size(); ++i)
   {
     components.push_back(theirResolved[i]);
   }
 
-  return Path(false, components);
+  return Path{false, std::move(components)};
 }
 
 Path Path::makeCanonical() const
 {
-  return Path(m_absolute, resolvePath(m_absolute, m_components));
+  return Path{m_absolute, resolvePath(m_absolute, m_components)};
 }
 
 Path Path::makeLowerCase() const
@@ -643,7 +635,7 @@ Path Path::makeLowerCase() const
   {
     lcComponents.push_back(kdl::str_to_lower(component));
   }
-  return Path(m_absolute, lcComponents);
+  return Path{m_absolute, std::move(lcComponents)};
 }
 
 std::vector<Path> Path::makeAbsoluteAndCanonical(
@@ -734,5 +726,4 @@ std::ostream& operator<<(std::ostream& stream, const Path& path)
   stream << path.asString();
   return stream;
 }
-} // namespace IO
-} // namespace TrenchBroom
+} // namespace TrenchBroom::IO
