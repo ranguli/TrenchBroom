@@ -67,6 +67,16 @@ TEST_CASE("string_utils_test.str_split")
     str_split("c:\\x\\y", "\\"), Catch::Equals(std::vector<std::string>{"c:", "x", "y"}));
 }
 
+TEST_CASE("string_utils_test.str_split_raw")
+{
+  CHECK(str_split_raw("", "/") == std::vector<std::string>{""});
+  CHECK(str_split_raw("/", "/") == std::vector<std::string>{"", ""});
+  CHECK(str_split_raw("/a", "/") == std::vector<std::string>{"", "a"});
+  CHECK(str_split_raw("a/", "/") == std::vector<std::string>{"a", ""});
+  CHECK(str_split_raw("a/b", "/") == std::vector<std::string>{"a", "b"});
+  CHECK(str_split_raw("a/b/c", "/") == std::vector<std::string>{"a", "b", "c"});
+}
+
 TEST_CASE("string_utils_test.str_join")
 {
   CHECK(str_join(std::vector<std::string_view>{}, ", ", " and ", ", and ") == "");

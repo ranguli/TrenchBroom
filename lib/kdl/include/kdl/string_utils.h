@@ -99,6 +99,29 @@ inline std::vector<std::string> str_split(
   return result;
 }
 
+inline std::vector<std::string> str_split_raw(
+  const std::string_view str, const std::string_view delims)
+{
+  auto result = std::vector<std::string>{};
+  auto buf = std::stringstream{};
+
+  for (auto c : str)
+  {
+    if (delims.find(c) != std::string_view::npos)
+    {
+      result.push_back(buf.str());
+      buf.str("");
+    }
+    else
+    {
+      buf << c;
+    }
+  }
+
+  result.push_back(buf.str());
+  return result;
+}
+
 /**
  * Joins the objects in the given range [it, end) using the given delimiters. The objects
  * are converted to string using the stream insertion operator and a string stream.

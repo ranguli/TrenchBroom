@@ -38,23 +38,14 @@ static constexpr std::string_view separators()
   return std::string_view("/\\");
 }
 
-Path::Path(bool absolute, std::vector<std::string> components)
+Path::Path(std::vector<std::string> components)
   : m_components{std::move(components)}
-  , m_absolute{absolute}
 {
 }
 
 Path::Path(const std::string& path)
+  : m_components{kdl::str_split_raw(kdl::str_trim(path), separators())}
 {
-  const auto trimmed = kdl::str_trim(path);
-  m_components = kdl::str_split(trimmed, separators());
-#ifdef _WIN32
-  m_absolute =
-    (hasDriveSpec(m_components) || (!trimmed.empty() && trimmed[0] == '/')
-     || (!trimmed.empty() && trimmed[0] == '\\'));
-#else
-  m_absolute = !trimmed.empty() && kdl::cs::str_is_prefix(trimmed, separator());
-#endif
 }
 
 Path Path::operator+(const Path& rhs) const
@@ -63,10 +54,13 @@ Path Path::operator+(const Path& rhs) const
   {
     throw PathException("Cannot concatenate absolute path");
   }
-  auto components = m_components;
+  auto components =
+    m_components.front().empty()
+      ? std::vector<std::string>{std::next(m_components.begin()), m_components.end()}
+      : m_components;
   components.insert(
     std::end(components), std::begin(rhs.m_components), std::end(rhs.m_components));
-  return Path{m_absolute, std::move(components)};
+  return Path{std::move(components)};
 }
 
 int Path::compare(const Path& rhs, const bool caseSensitive) const
@@ -137,7 +131,7 @@ bool Path::operator>(const Path& rhs) const
 
 std::string Path::asString(const std::string_view separator) const
 {
-  if (m_absolute)
+  if (isAbsolute())
   {
 #ifdef _WIN32
     if (hasDriveSpec(m_components))
@@ -149,7 +143,6 @@ std::string Path::asString(const std::string_view separator) const
       return std::string(separator) + kdl::str_join(m_components, separator);
     }
 #else
-    return std::string(separator) + kdl::str_join(m_components, separator);
 #endif
   }
   return kdl::str_join(m_components, separator);
@@ -179,7 +172,7 @@ size_t Path::length() const
 
 bool Path::isEmpty() const
 {
-  return !m_absolute && m_components.empty();
+  return !isAbsolute() && m_components.empty();
 }
 
 Path Path::firstComponent() const
@@ -189,7 +182,7 @@ Path Path::firstComponent() const
     throw PathException("Cannot return first component of empty path");
   }
 
-  if (!m_absolute)
+  if (!isAbsolute())
   {
     return Path{m_components.front()};
   }
@@ -212,13 +205,13 @@ Path Path::deleteFirstComponent() const
   {
     throw PathException("Cannot delete first component of empty path");
   }
-  if (!m_absolute)
+  if (!isAbsolute())
   {
     auto components = std::vector<std::string>();
     components.reserve(m_components.size() - 1);
     components.insert(
       std::begin(components), std::begin(m_components) + 1, std::end(m_components));
-    return Path{false, std::move(components)};
+    return Path{std::move(components)};
   }
 #ifdef _WIN32
   if (!m_components.empty() && hasDriveSpec(m_components[0]))
@@ -227,11 +220,11 @@ Path Path::deleteFirstComponent() const
     components.reserve(m_components.size() - 1);
     components.insert(
       std::begin(components), std::begin(m_components) + 1, std::end(m_components));
-    return Path{false, std::move(components)};
+    return Path{std::move(components)};
   }
-  return Path{false, m_components};
+  return Path{m_components};
 #else
-  return Path{false, m_components};
+  return Path{m_components};
 #endif
 }
 
@@ -262,12 +255,9 @@ Path Path::deleteLastComponent() const
     components.reserve(m_components.size() - 1);
     components.insert(
       std::begin(components), std::begin(m_components), std::end(m_components) - 1);
-    return Path{m_absolute, std::move(components)};
+    return Path{std::move(components)};
   }
-  else
-  {
-    return Path{m_absolute, m_components};
-  }
+  return Path{m_components};
 }
 
 Path Path::prefix(const size_t count) const
@@ -298,7 +288,7 @@ Path Path::subPath(const size_t index, const size_t count) const
   {
     newComponents.push_back(m_components[index + i]);
   }
-  return Path{m_absolute && index == 0, std::move(newComponents)};
+  return Path{std::move(newComponents)};
 }
 
 const std::vector<std::string>& Path::components() const
@@ -481,7 +471,7 @@ Path Path::addExtension(const std::string& extension) const
   {
     components.back() += "." + extension;
   }
-  return Path{m_absolute, std::move(components)};
+  return Path{std::move(components)};
 }
 
 Path Path::replaceExtension(const std::string& extension) const
@@ -500,7 +490,7 @@ Path Path::replaceBasename(const std::string& basename) const
 
 bool Path::isAbsolute() const
 {
-  return m_absolute;
+  return m_components.size() > 1 && m_components.front().empty();
 }
 
 bool Path::canMakeRelative(const Path& absolutePath) const
@@ -548,9 +538,9 @@ Path Path::makeRelative() const
       "Cannot make relative path from an reference path with no drive spec");
   }
 
-  return Path{false, kdl::vec_slice_suffix(m_components, m_components.size() - 1u)};
+  return Path{kdl::vec_slice_suffix(m_components, m_components.size() - 1u)};
 #else
-  return Path{false, m_components};
+  return Path{m_components};
 #endif
 }
 
@@ -619,12 +609,12 @@ Path Path::makeRelative(const Path& absolutePath) const
     components.push_back(theirResolved[i]);
   }
 
-  return Path{false, std::move(components)};
+  return Path{std::move(components)};
 }
 
 Path Path::makeCanonical() const
 {
-  return Path{m_absolute, resolvePath(m_absolute, m_components)};
+  return Path{resolvePath(isAbsolute(), m_components)};
 }
 
 Path Path::makeLowerCase() const
@@ -635,7 +625,7 @@ Path Path::makeLowerCase() const
   {
     lcComponents.push_back(kdl::str_to_lower(component));
   }
-  return Path{m_absolute, std::move(lcComponents)};
+  return Path{std::move(lcComponents)};
 }
 
 std::vector<Path> Path::makeAbsoluteAndCanonical(

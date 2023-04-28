@@ -58,9 +58,8 @@ public:
 
 private:
   std::vector<std::string> m_components;
-  bool m_absolute;
 
-  Path(bool absolute, std::vector<std::string> components);
+  explicit Path(std::vector<std::string> components);
 
 public:
   explicit Path(const std::string& path = "");
