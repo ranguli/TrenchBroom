@@ -45,7 +45,7 @@ TEST_CASE("convertToString")
   CHECK(convertToString(worldNode) == R"(WorldNode{
   m_entityPropertyConfig: EntityPropertyConfig{defaultModelScaleExpression: nullopt, setDefaultProperties: 0, updateAnglePropertyAfterTransform: 1},
   m_mapFormat: Quake3,
-  m_entity: Entity{m_properties: [EntityProperty{m_key: classname, m_value: worldspawn}], m_protectedProperties: []},
+  m_entity: Entity{m_properties: [EntityProperty{m_key: classname, m_value: worldspawn}], m_protectedProperties: [], m_linkId: nullopt},
   m_children: [
     LayerNode{
       m_layer: Layer{m_defaultLayer: 1, m_name: Default Layer, m_sortIndex: nullopt, m_color: nullopt, m_omitFromExport: 0},
@@ -73,7 +73,7 @@ TEST_CASE("convertToString")
   CHECK(convertToString(worldNode) == R"(WorldNode{
   m_entityPropertyConfig: EntityPropertyConfig{defaultModelScaleExpression: nullopt, setDefaultProperties: 0, updateAnglePropertyAfterTransform: 1},
   m_mapFormat: Quake3,
-  m_entity: Entity{m_properties: [EntityProperty{m_key: classname, m_value: worldspawn}], m_protectedProperties: []},
+  m_entity: Entity{m_properties: [EntityProperty{m_key: classname, m_value: worldspawn}], m_protectedProperties: [], m_linkId: nullopt},
   m_children: [
     LayerNode{
       m_layer: Layer{m_defaultLayer: 1, m_name: Default Layer, m_sortIndex: nullopt, m_color: nullopt, m_omitFromExport: 0},
@@ -82,7 +82,7 @@ TEST_CASE("convertToString")
           m_group: Group{m_name: group, m_linkedGroupId: nullopt, m_transformation: 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1},
           m_children: [
             EntityNode{
-              m_entity: Entity{m_properties: [], m_protectedProperties: []},
+              m_entity: Entity{m_properties: [], m_protectedProperties: [], m_linkId: nullopt},
               m_children: [],
             },
             BrushNode{

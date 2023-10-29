@@ -123,6 +123,21 @@ void Entity::setProtectedProperties(std::vector<std::string> protectedProperties
   m_protectedProperties = std::move(protectedProperties);
 }
 
+const std::optional<std::string>& Entity::linkId() const
+{
+  return m_linkId;
+}
+
+void Entity::setLinkId(std::string linkId)
+{
+  m_linkId = std::move(linkId);
+}
+
+void Entity::resetLinkId()
+{
+  m_linkId = std::nullopt;
+}
+
 bool Entity::pointEntity() const
 {
   return m_pointEntity;

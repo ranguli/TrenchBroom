@@ -94,8 +94,9 @@ public:
 private:
   std::vector<EntityProperty> m_properties;
   std::vector<std::string> m_protectedProperties;
+  std::optional<std::string> m_linkId;
 
-  kdl_reflect_decl(Entity, m_properties, m_protectedProperties);
+  kdl_reflect_decl(Entity, m_properties, m_protectedProperties, m_linkId);
 
   /**
    * Specifies whether this entity has children or not. This does not necessarily
@@ -148,6 +149,10 @@ public:
    */
   const std::vector<std::string>& protectedProperties() const;
   void setProtectedProperties(std::vector<std::string> protectedProperties);
+
+  const std::optional<std::string>& linkId() const;
+  void setLinkId(std::string linkId);
+  void resetLinkId();
 
   bool pointEntity() const;
   void setPointEntity(const EntityPropertyConfig& propertyConfig, bool pointEntity);
