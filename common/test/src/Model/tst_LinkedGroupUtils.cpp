@@ -17,16 +17,26 @@
  along with TrenchBroom. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "Model/Brush.h"
+#include "Model/BrushBuilder.h"
+#include "Model/BrushNode.h"
 #include "Model/Entity.h"
 #include "Model/EntityNode.h"
 #include "Model/Group.h"
 #include "Model/GroupNode.h"
+#include "Model/LayerNode.h"
 #include "Model/LinkedGroupUtils.h"
+#include "Model/WorldNode.h"
 #include "TestUtils.h"
+
+#include <kdl/map_utils.h>
 
 #include <vecmath/bbox.h>
 #include <vecmath/mat.h>
 #include <vecmath/mat_ext.h>
+
+#include <unordered_set>
+#include <vector>
 
 #include "Catch2.h"
 
@@ -474,6 +484,298 @@ TEST_CASE("GroupNode.updateLinkedGroupsAndPreserveEntityProperties")
         Catch::UnorderedEquals(targetEntityNode->entity().protectedProperties()));
     })
     .transform_error([](const auto&) { FAIL(); });
+}
+
+namespace
+{
+template <typename K, typename V, typename S>
+auto getValue(const std::unordered_map<K, V>& m, const S& key)
+{
+  const auto it = m.find(key);
+  return it != m.end() ? std::optional{it->second} : std::nullopt;
+}
+
+class EntityLinkIdMatcher
+  : public Catch::MatcherBase<Result<std::unordered_map<EntityNode*, std::string>>>
+{
+  std::vector<std::vector<EntityNode*>> m_expected;
+
+public:
+  explicit EntityLinkIdMatcher(std::vector<std::vector<EntityNode*>> expected)
+    : m_expected{std::move(expected)}
+  {
+  }
+
+  bool match(
+    const Result<std::unordered_map<EntityNode*, std::string>>& in) const override
+  {
+    return in
+      .transform([&](const auto& entityLinkIds) {
+        const auto count = std::accumulate(
+          m_expected.begin(),
+          m_expected.end(),
+          0u,
+          [](const auto c, const auto& entitiesWithSameLinkId) {
+            return c + entitiesWithSameLinkId.size();
+          });
+
+        return entityLinkIds.size() == count
+               && kdl::all_of(m_expected, [&](const auto& entitiesWithSameLinkId) {
+                    if (entitiesWithSameLinkId.empty())
+                    {
+                      return false;
+                    }
+
+                    const auto entityLinkId =
+                      getValue(entityLinkIds, entitiesWithSameLinkId.front());
+
+                    return entityLinkId
+                           && kdl::all_of(entitiesWithSameLinkId, [&](auto* entity) {
+                                return getValue(entityLinkIds, entity) == entityLinkId;
+                              });
+                  });
+      })
+      .transform_error([](auto) { return false; })
+      .value();
+  }
+
+  std::string describe() const override
+  {
+    auto str = std::stringstream{};
+    str << "matches " << kdl::make_streamable(m_expected);
+    return str.str();
+  }
+};
+
+auto MatchesEntityLinkIds(std::vector<std::vector<EntityNode*>> expected)
+{
+  return EntityLinkIdMatcher{std::move(expected)};
+}
+
+} // namespace
+
+TEST_CASE("generateEntityLinks")
+{
+  const auto setRootLinkedGroupIds = GENERATE(true, false);
+  CAPTURE(setRootLinkedGroupIds);
+
+  auto brushBuilder = Model::BrushBuilder{Model::MapFormat::Quake3, vm::bbox3{8192.0}};
+
+  auto outerGroupNode = Model::GroupNode{Model::Group{"outer"}};
+  auto* outerEntityNode = new Model::EntityNode{Model::Entity{}};
+  auto* outerBrushNode =
+    new Model::BrushNode{brushBuilder.createCube(64.0, "texture").value()};
+
+  auto* innerGroupNode = new Model::GroupNode{Model::Group{"inner"}};
+  auto* innerBrushNode =
+    new Model::BrushNode{brushBuilder.createCube(64.0, "texture").value()};
+  auto* innerEntityNode = new Model::EntityNode{Model::Entity{}};
+
+  innerGroupNode->addChildren({innerBrushNode, innerEntityNode});
+  outerGroupNode.addChildren({outerEntityNode, outerBrushNode, innerGroupNode});
+
+  auto linkedOuterGroupNode = Model::GroupNode{Model::Group{"outer"}};
+  auto* linkedOuterEntityNode = new Model::EntityNode{Model::Entity{}};
+  auto* linkedOuterBrushNode =
+    new Model::BrushNode{brushBuilder.createCube(64.0, "texture").value()};
+
+  auto* linkedInnerGroupNode = new Model::GroupNode{Model::Group{"inner"}};
+  auto* linkedInnerBrushNode =
+    new Model::BrushNode{brushBuilder.createCube(64.0, "texture").value()};
+  auto* linkedInnerEntityNode = new Model::EntityNode{Model::Entity{}};
+
+  if (setRootLinkedGroupIds)
+  {
+    Model::setLinkedGroupId(outerGroupNode, "linkedGroupId");
+    Model::setLinkedGroupId(linkedOuterGroupNode, "linkedGroupId");
+  }
+
+  SECTION("If one outer group node has no children")
+  {
+    CHECK(
+      generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode})
+      == Result<std::unordered_map<EntityNode*, std::string>>{
+        Error{"Inconsistent linked group structure"}});
+  }
+
+  SECTION("If one outer group node has fewer children")
+  {
+    linkedOuterGroupNode.addChildren({linkedOuterEntityNode, linkedOuterBrushNode});
+
+    CHECK(
+      generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode})
+      == Result<std::unordered_map<EntityNode*, std::string>>{
+        Error{"Inconsistent linked group structure"}});
+  }
+
+  SECTION("If one inner group node has fewer children")
+  {
+    linkedOuterGroupNode.addChildren(
+      {linkedOuterEntityNode, linkedOuterBrushNode, linkedInnerGroupNode});
+    linkedInnerGroupNode->addChildren({linkedInnerBrushNode});
+
+    CHECK(
+      generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode})
+      == Result<std::unordered_map<EntityNode*, std::string>>{
+        Error{"Inconsistent linked group structure"}});
+  }
+
+  SECTION("If one outer group node has children in different order")
+  {
+    linkedInnerGroupNode->addChildren({linkedInnerBrushNode, linkedInnerEntityNode});
+    linkedOuterGroupNode.addChildren(
+      {linkedOuterEntityNode, linkedInnerGroupNode, linkedOuterBrushNode});
+
+    CHECK(
+      generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode})
+      == Result<std::unordered_map<EntityNode*, std::string>>{
+        Error{"Inconsistent linked group structure"}});
+  }
+
+  SECTION("If one inner group node has children in different order")
+  {
+    linkedInnerGroupNode->addChildren({linkedInnerEntityNode, linkedInnerBrushNode});
+    linkedOuterGroupNode.addChildren(
+      {linkedOuterEntityNode, linkedOuterBrushNode, linkedInnerGroupNode});
+
+    CHECK(
+      generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode})
+      == Result<std::unordered_map<EntityNode*, std::string>>{
+        Error{"Inconsistent linked group structure"}});
+  }
+
+  SECTION("If both groups have the same structure")
+  {
+    linkedInnerGroupNode->addChildren({linkedInnerBrushNode, linkedInnerEntityNode});
+    linkedOuterGroupNode.addChildren(
+      {linkedOuterEntityNode, linkedOuterBrushNode, linkedInnerGroupNode});
+
+    SECTION("With zero groups")
+    {
+      CHECK(
+        generateEntityLinkIds({})
+        == Result<std::unordered_map<EntityNode*, std::string>>{
+          Error{"Link set must contain at least one group"}});
+    }
+
+    SECTION("With one group")
+    {
+      REQUIRE(outerEntityNode->entity().linkId() == std::nullopt);
+      REQUIRE(innerEntityNode->entity().linkId() == std::nullopt);
+
+      CHECK_THAT(
+        generateEntityLinkIds({&outerGroupNode}),
+        MatchesEntityLinkIds({
+          {outerEntityNode},
+          {innerEntityNode},
+        }));
+    }
+
+    SECTION("With two groups")
+    {
+      REQUIRE(outerEntityNode->entity().linkId() == std::nullopt);
+      REQUIRE(innerEntityNode->entity().linkId() == std::nullopt);
+      REQUIRE(outerEntityNode->entity() == linkedOuterEntityNode->entity());
+      REQUIRE(innerEntityNode->entity() == linkedInnerEntityNode->entity());
+
+      CHECK_THAT(
+        generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode}),
+        MatchesEntityLinkIds({
+          {outerEntityNode, linkedOuterEntityNode},
+          {innerEntityNode, linkedInnerEntityNode},
+        }));
+    }
+
+    SECTION("With three groups")
+    {
+      auto linkedOuterGroupNode2 = Model::GroupNode{Model::Group{"outer"}};
+      auto* linkedOuterEntityNode2 = new Model::EntityNode{Model::Entity{}};
+      auto* linkedOuterBrushNode2 =
+        new Model::BrushNode{brushBuilder.createCube(64.0, "texture").value()};
+
+      auto* linkedInnerGroupNode2 = new Model::GroupNode{Model::Group{"inner"}};
+      auto* linkedInnerBrushNode2 =
+        new Model::BrushNode{brushBuilder.createCube(64.0, "texture").value()};
+      auto* linkedInnerEntityNode2 = new Model::EntityNode{Model::Entity{}};
+
+      linkedInnerGroupNode2->addChildren({linkedInnerBrushNode2, linkedInnerEntityNode2});
+      linkedOuterGroupNode2.addChildren(
+        {linkedOuterEntityNode2, linkedOuterBrushNode2, linkedInnerGroupNode2});
+
+      if (setRootLinkedGroupIds)
+      {
+        Model::setLinkedGroupId(linkedOuterGroupNode2, "linkedGroupId");
+      }
+
+      REQUIRE(outerEntityNode->entity().linkId() == std::nullopt);
+      REQUIRE(innerEntityNode->entity().linkId() == std::nullopt);
+      REQUIRE(outerEntityNode->entity() == linkedOuterEntityNode->entity());
+      REQUIRE(innerEntityNode->entity() == linkedInnerEntityNode->entity());
+      REQUIRE(outerEntityNode->entity() == linkedOuterEntityNode2->entity());
+      REQUIRE(innerEntityNode->entity() == linkedInnerEntityNode2->entity());
+
+      CHECK_THAT(
+        generateEntityLinkIds(
+          {&outerGroupNode, &linkedOuterGroupNode, &linkedOuterGroupNode2}),
+        MatchesEntityLinkIds({
+          {outerEntityNode, linkedOuterEntityNode, linkedOuterEntityNode2},
+          {innerEntityNode, linkedInnerEntityNode, linkedInnerEntityNode2},
+        }));
+    }
+
+    SECTION("With nested linked groups")
+    {
+      Model::setLinkedGroupId(*innerGroupNode, "nestedLinkedGroupId");
+      Model::setLinkedGroupId(*linkedInnerGroupNode, "nestedLinkedGroupId");
+
+      SECTION("Only outer groups")
+      {
+        REQUIRE(outerEntityNode->entity().linkId() == std::nullopt);
+        REQUIRE(innerEntityNode->entity().linkId() == std::nullopt);
+        REQUIRE(outerEntityNode->entity() == linkedOuterEntityNode->entity());
+        REQUIRE(innerEntityNode->entity() == linkedInnerEntityNode->entity());
+
+        CHECK_THAT(
+          generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode}),
+          MatchesEntityLinkIds({
+            {outerEntityNode, linkedOuterEntityNode},
+          }));
+      }
+
+      SECTION("Only inner groups")
+      {
+        REQUIRE(outerEntityNode->entity().linkId() == std::nullopt);
+        REQUIRE(innerEntityNode->entity().linkId() == std::nullopt);
+        REQUIRE(outerEntityNode->entity() == linkedOuterEntityNode->entity());
+        REQUIRE(innerEntityNode->entity() == linkedInnerEntityNode->entity());
+
+        CHECK_THAT(
+          generateEntityLinkIds({innerGroupNode, linkedInnerGroupNode}),
+          MatchesEntityLinkIds({
+            {innerEntityNode, linkedInnerEntityNode},
+          }));
+      }
+
+      SECTION("Inner groups, then outer groups")
+      {
+        REQUIRE(
+          initializeEntityLinkIds({innerGroupNode, linkedInnerGroupNode}).is_success());
+
+        REQUIRE(outerEntityNode->entity().linkId() == std::nullopt);
+        REQUIRE(innerEntityNode->entity().linkId() != std::nullopt);
+        REQUIRE(outerEntityNode->entity() == linkedOuterEntityNode->entity());
+        REQUIRE(innerEntityNode->entity() == linkedInnerEntityNode->entity());
+
+        const auto innerEntityLinkId = innerEntityNode->entity().linkId();
+
+        CHECK_THAT(
+          generateEntityLinkIds({&outerGroupNode, &linkedOuterGroupNode}),
+          MatchesEntityLinkIds({
+            {outerEntityNode, linkedOuterEntityNode},
+          }));
+      }
+    }
+  }
 }
 
 } // namespace TrenchBroom::Model
