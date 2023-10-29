@@ -24,17 +24,19 @@
 #include "Model/BrushNode.h"
 #include "Model/EntityNode.h"
 #include "Model/GroupNode.h"
+#include "Model/LayerNode.h"
 #include "Model/Node.h"
 #include "Model/NodeContents.h"
 #include "Model/PatchNode.h"
+#include "Model/WorldNode.h"
+#include "Uuid.h"
 
 #include <kdl/overload.h>
 #include <kdl/parallel.h>
 #include <kdl/result.h>
 #include <kdl/result_fold.h>
 #include <kdl/vector_utils.h>
-
-#include <unordered_map>
+#include <kdl/zip_iterator.h>
 
 namespace TrenchBroom::Model
 {
@@ -327,6 +329,206 @@ Result<UpdateLinkedGroupsResult> updateLinkedGroups(
             static_cast<Node*>(targetGroupNode), std::move(newChildren));
         });
     }));
+}
+namespace
+{
+
+template <typename N1, typename N2>
+Result<N1*> tryCast(N2& targetNode)
+{
+  auto* targetNodeCasted = dynamic_cast<N1*>(&targetNode);
+  return targetNodeCasted ? Result<N1*>{targetNodeCasted}
+                          : Result<N1*>{Error{"Inconsistent linked group structure"}};
+}
+
+template <typename SourceNode, typename TargetNode, typename F>
+Result<void> visitNodesPerPosition(
+  SourceNode& sourceNode, TargetNode& targetNode, const F& f)
+{
+  return sourceNode
+    .accept(kdl::overload(
+      [&](WorldNode* sourceWorldNode) {
+        return tryCast<WorldNode>(targetNode).transform([&](WorldNode* targetWorldNode) {
+          return f(*sourceWorldNode, *targetWorldNode);
+        });
+      },
+      [&](LayerNode* sourceLayerNode) {
+        return tryCast<LayerNode>(targetNode).transform([&](LayerNode* targetLayerNode) {
+          return f(*sourceLayerNode, *targetLayerNode);
+        });
+      },
+      [&](GroupNode* sourceGroupNode) {
+        return tryCast<GroupNode>(targetNode).transform([&](GroupNode* targetGroupNode) {
+          return f(*sourceGroupNode, *targetGroupNode);
+        });
+      },
+      [&](EntityNode* sourceEntityNode) {
+        return tryCast<EntityNode>(targetNode)
+          .transform([&](EntityNode* targetEntityNode) {
+            return f(*sourceEntityNode, *targetEntityNode);
+          });
+      },
+      [&](BrushNode* sourceBrushNode) {
+        return tryCast<BrushNode>(targetNode).transform([&](BrushNode* targetBrushNode) {
+          return f(*sourceBrushNode, *targetBrushNode);
+        });
+      },
+      [&](PatchNode* sourcePatchNode) {
+        return tryCast<PatchNode>(targetNode).transform([&](PatchNode* targetPatchNode) {
+          return f(*sourcePatchNode, *targetPatchNode);
+        });
+      }))
+    .and_then([&](const auto& recurse) {
+      if (recurse)
+      {
+        return visitChildrenPerPosition(sourceNode, targetNode, f);
+      }
+
+      return Result<void>{};
+    });
+}
+
+template <typename SourceNode, typename TargetNode, typename F>
+Result<void> visitChildrenPerPosition(
+  SourceNode& sourceNode, TargetNode& targetNode, const F& f)
+{
+  if (sourceNode.childCount() != targetNode.childCount())
+  {
+    return Error{"Inconsistent linked group structure"};
+  }
+
+  return kdl::fold_results(kdl::vec_transform(
+    kdl::make_zip_range(sourceNode.children(), targetNode.children()),
+    [&](auto& childPair) {
+      auto& [sourceChild, targetChild] = childPair;
+      return visitNodesPerPosition(*sourceChild, *targetChild, f);
+    }));
+}
+
+std::unordered_map<Node*, std::string> generateLinkIds(GroupNode& rootNode)
+{
+  auto result = std::unordered_map<Node*, std::string>{};
+
+  // rootNode already has a link ID, so we don't visit it
+  rootNode.visitChildren(kdl::overload(
+    [](const WorldNode*) {},
+    [](const LayerNode*) {},
+    [&](auto&& thisLambda, GroupNode* groupNode) {
+      // don't recurse into nested linked groups
+      if (!groupNode->group().linkId())
+      {
+        result[groupNode] = generateUuid();
+        groupNode->visitChildren(thisLambda);
+      }
+    },
+    [&](auto&& thisLambda, EntityNode* entityNode) {
+      result[entityNode] = generateUuid();
+      entityNode->visitChildren(thisLambda);
+    },
+    [&](BrushNode* brushNode) { result[brushNode] = generateUuid(); },
+    [&](PatchNode* patchNode) { result[patchNode] = generateUuid(); }));
+
+  return result;
+}
+
+template <typename N>
+void copyLinkId(
+  N& sourceNode, N& targetNode, std::unordered_map<Node*, std::string>& linkIds)
+{
+  auto sourceLinkIdIt = linkIds.find(&sourceNode);
+  ensure(sourceLinkIdIt != linkIds.end(), "Source entity has link ID");
+
+  const auto& sourceLinkId = sourceLinkIdIt->second;
+  linkIds[&targetNode] = sourceLinkId;
+}
+
+Result<void> copyLinkIds(
+  GroupNode& sourceRootNode,
+  GroupNode& targetRootNode,
+  std::unordered_map<Node*, std::string>& linkIds)
+{
+  // sourceRootNode and targetRootNode already have a link IDs, so we don't visit them
+  return visitChildrenPerPosition(
+    sourceRootNode,
+    targetRootNode,
+    kdl::overload(
+      [&](const WorldNode&, const WorldNode&) { return true; },
+      [&](const LayerNode&, const LayerNode&) { return true; },
+      [&](GroupNode& sourceGroupNode, GroupNode& targetGroupNode) {
+        // don't recurse into nested linked groups
+        if (!targetGroupNode.group().linkId())
+        {
+          copyLinkId(sourceGroupNode, targetGroupNode, linkIds);
+          return true;
+        }
+        return false;
+      },
+      [&](EntityNode& sourceEntityNode, EntityNode& targetEntityNode) {
+        copyLinkId(sourceEntityNode, targetEntityNode, linkIds);
+        return true;
+      },
+      [&](BrushNode& sourceBrushNode, BrushNode& targetBrushNode) {
+        copyLinkId(sourceBrushNode, targetBrushNode, linkIds);
+        return false;
+      },
+      [&](PatchNode& sourcePatchNode, PatchNode& targetPatchNode) {
+        copyLinkId(sourcePatchNode, targetPatchNode, linkIds);
+        return false;
+      }));
+}
+
+} // namespace
+
+Result<std::unordered_map<Node*, std::string>> generateLinkIds(
+  const std::vector<GroupNode*>& groupNodes)
+{
+  if (groupNodes.empty())
+  {
+    return Error{"Link set must contain at least one group"};
+  }
+
+  auto& sourceGroupNode = *groupNodes.front();
+  auto linkIds = generateLinkIds(sourceGroupNode);
+
+  return kdl::fold_results(kdl::vec_transform(
+                             kdl::range{std::next(groupNodes.begin()), groupNodes.end()},
+                             [&](auto* targetGroupNode) {
+                               return copyLinkIds(
+                                 sourceGroupNode, *targetGroupNode, linkIds);
+                             }))
+    .transform([&]() { return std::move(linkIds); });
+}
+
+Result<void> initializeLinkIds(const std::vector<GroupNode*>& groupNodes)
+{
+  return generateLinkIds(groupNodes).transform([](auto linkIds) {
+    for (auto& [node, linkId] : linkIds)
+    {
+      node->accept(kdl::overload(
+        [](const WorldNode*) {},
+        [](const LayerNode*) {},
+        [&linkId = linkId](GroupNode* groupNode) {
+          auto group = groupNode->group();
+          group.setLinkId(std::move(linkId));
+          groupNode->setGroup(std::move(group));
+        },
+        [&linkId = linkId](EntityNode* entityNode) {
+          auto entity = entityNode->entity();
+          entity.setLinkId(std::move(linkId));
+          entityNode->setEntity(std::move(entity));
+        },
+        [&linkId = linkId](BrushNode* brushNode) {
+          auto brush = brushNode->brush();
+          brush.setLinkId(std::move(linkId));
+          brushNode->setBrush(std::move(brush));
+        },
+        [&linkId = linkId](PatchNode* patchNode) {
+          auto patch = patchNode->patch();
+          patch.setLinkId(std::move(linkId));
+          patchNode->setPatch(std::move(patch));
+        }));
+    }
+  });
 }
 
 } // namespace TrenchBroom::Model
