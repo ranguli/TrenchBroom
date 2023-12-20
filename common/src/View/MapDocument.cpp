@@ -2145,7 +2145,11 @@ Model::GroupNode* MapDocument::createLinkedDuplicate()
   auto* groupNode = m_selectedNodes.groups().front();
   if (!groupNode->group().linkedGroupId())
   {
-    linkGroups({groupNode});
+    if (!linkGroups({groupNode}))
+    {
+      transaction.cancel();
+      return nullptr;
+    }
   }
 
   auto* groupNodeClone =
@@ -2218,23 +2222,51 @@ bool MapDocument::canSelectLinkedGroups() const
   return true;
 }
 
-void MapDocument::linkGroups(const std::vector<Model::GroupNode*>& groupNodes)
+bool MapDocument::linkGroups(const std::vector<Model::GroupNode*>& groupNodes)
 {
-  const auto newLinkedGroupId = generateUuid();
-  applyAndSwap(
-    *this,
-    "Set Linked Group ID",
-    groupNodes,
-    findContainingLinkedGroups(*m_world, groupNodes),
-    kdl::overload(
-      [](Model::Layer&) { return true; },
-      [&](Model::Group& group) {
-        group.setLinkedGroupId(newLinkedGroupId);
-        return true;
-      },
-      [](Model::Entity&) { return true; },
-      [](Model::Brush&) { return true; },
-      [](Model::BezierPatch&) { return true; }));
+  auto changedLinkedGroups = findContainingLinkedGroups(*m_world, groupNodes);
+
+  auto transaction = Transaction{*this, "Link Groups"};
+  return generateEntityLinkIds(groupNodes)
+    .transform([](auto entityLinkIds) {
+      return kdl::vec_transform(
+        std::move(entityLinkIds),
+        [](auto entityAndLinkId) -> std::pair<Model::Node*, Model::NodeContents> {
+          auto& [entityNode, entityLinkId] = entityAndLinkId;
+          auto entity = entityNode->entity();
+          entity.setLinkId(std::move(entityLinkId));
+          return {entityNode, Model::NodeContents{std::move(entity)}};
+        });
+    })
+    .and_then([&](auto nodeAndNodeContents) {
+      return swapNodeContents(
+               "Set Entity Link IDs", std::move(nodeAndNodeContents), changedLinkedGroups)
+               ? Result<void>{}
+               : Result<void>{Error{"Set entity link IDs failed"}};
+    })
+    .transform([&]() {
+      const auto newLinkedGroupId = generateUuid();
+      applyAndSwap(
+        *this,
+        "Set Linked Group ID",
+        groupNodes,
+        changedLinkedGroups,
+        kdl::overload(
+          [](Model::Layer&) { return true; },
+          [&](Model::Group& group) {
+            group.setLinkedGroupId(newLinkedGroupId);
+            return true;
+          },
+          [](Model::Entity&) { return true; },
+          [](Model::Brush&) { return true; },
+          [](Model::BezierPatch&) { return true; }));
+      transaction.commit();
+    })
+    .transform_error([&](auto e) {
+      transaction.cancel();
+      error() << "Could not link groups: " << e.msg;
+    })
+    .is_success();
 }
 
 void MapDocument::unlinkGroups(const std::vector<Model::GroupNode*>& groupNodes)

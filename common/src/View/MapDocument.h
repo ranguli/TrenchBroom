@@ -481,7 +481,7 @@ public:
   void selectLinkedGroups();
   bool canSelectLinkedGroups() const;
 
-  void linkGroups(const std::vector<Model::GroupNode*>& groupNodes);
+  bool linkGroups(const std::vector<Model::GroupNode*>& groupNodes);
   void unlinkGroups(const std::vector<Model::GroupNode*>& groupNodes);
 
   /**

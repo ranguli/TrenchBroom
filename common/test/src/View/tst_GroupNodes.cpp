@@ -502,9 +502,9 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
 
 TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.createLinkedDuplicate")
 {
-  auto* brushNode = createBrushNode();
-  document->addNodes({{document->parentForNodes(), {brushNode}}});
-  document->selectNodes({brushNode});
+  auto* entityNode = new Model::EntityNode{Model::Entity{}};
+  document->addNodes({{document->parentForNodes(), {entityNode}}});
+  document->selectNodes({entityNode});
 
   auto* groupNode = document->groupSelection("test");
   REQUIRE(groupNode != nullptr);
@@ -518,7 +518,14 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.createLinkedDuplicate")
   CHECK(document->canCreateLinkedDuplicate());
 
   auto* linkedGroupNode = document->createLinkedDuplicate();
+  CHECK(entityNode->entity().linkId() != std::nullopt);
   CHECK_THAT(*linkedGroupNode, Model::MatchesNode(*groupNode));
+
+  document->deselectAll();
+  document->selectNodes({linkedGroupNode});
+
+  auto* linkedGroupNode2 = document->createLinkedDuplicate();
+  CHECK_THAT(*linkedGroupNode2, Model::MatchesNode(*groupNode));
 }
 
 TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.recursiveLinkedGroups")
