@@ -2271,10 +2271,23 @@ bool MapDocument::linkGroups(const std::vector<Model::GroupNode*>& groupNodes)
 
 void MapDocument::unlinkGroups(const std::vector<Model::GroupNode*>& groupNodes)
 {
+  const auto entityNodes = Model::collectNodes(
+    groupNodes,
+    kdl::overload(
+      [](Model::WorldNode*) { return false; },
+      [](Model::LayerNode*) { return false; },
+      [](Model::GroupNode*) { return false; },
+      [](Model::EntityNode*) { return true; },
+      [](Model::BrushNode*) { return false; },
+      [](Model::PatchNode*) { return false; }));
+
+  const auto nodesToTransform =
+    kdl::vec_concat(std::vector<Model::Node*>{}, groupNodes, entityNodes);
+
   applyAndSwap(
     *this,
     "Reset Linked Group ID",
-    groupNodes,
+    nodesToTransform,
     findContainingLinkedGroups(*m_world, groupNodes),
     kdl::overload(
       [](Model::Layer&) { return true; },
@@ -2282,7 +2295,10 @@ void MapDocument::unlinkGroups(const std::vector<Model::GroupNode*>& groupNodes)
         group.resetLinkedGroupId();
         return true;
       },
-      [](Model::Entity&) { return true; },
+      [](Model::Entity& entity) {
+        entity.resetLinkId();
+        return true;
+      },
       [](Model::Brush&) { return true; },
       [](Model::BezierPatch&) { return true; }));
 }

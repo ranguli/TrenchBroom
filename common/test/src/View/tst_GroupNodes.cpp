@@ -413,10 +413,10 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.mergeGroups")
 
 TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
 {
-  auto* brushNode = createBrushNode();
-  document->addNodes({{document->parentForNodes(), {brushNode}}});
+  auto* entityNode = new Model::EntityNode{Model::Entity{}};
+  document->addNodes({{document->parentForNodes(), {entityNode}}});
 
-  document->selectNodes({brushNode});
+  document->selectNodes({entityNode});
 
   auto* groupNode = document->groupSelection("test");
   REQUIRE(groupNode != nullptr);
@@ -425,11 +425,17 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
   document->selectNodes({groupNode});
 
   auto* linkedGroupNode = document->createLinkedDuplicate();
+  auto* linkedEntityNode =
+    dynamic_cast<Model::EntityNode*>(linkedGroupNode->children().front());
+  REQUIRE(linkedEntityNode != nullptr);
 
   document->deselectAll();
   document->selectNodes({linkedGroupNode});
 
   auto* linkedGroupNode2 = document->createLinkedDuplicate();
+  auto* linkedEntityNode2 =
+    dynamic_cast<Model::EntityNode*>(linkedGroupNode2->children().front());
+  REQUIRE(linkedEntityNode2 != nullptr);
 
   document->deselectAll();
   REQUIRE_THAT(
@@ -437,21 +443,27 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
     Catch::UnorderedEquals(
       std::vector<Model::Node*>{groupNode, linkedGroupNode, linkedGroupNode2}));
 
+  REQUIRE(entityNode->entity().linkId() != std::nullopt);
+  REQUIRE(linkedEntityNode->entity().linkId() == entityNode->entity().linkId());
+  REQUIRE(linkedEntityNode2->entity().linkId() == entityNode->entity().linkId());
+
   SECTION(
     "Given three linked groups, we ungroup one of them, the other two remain linked")
   {
     document->selectNodes({linkedGroupNode2});
 
-    auto* linkedBrushNode2 = linkedGroupNode2->children().front();
-
     document->ungroupSelection();
     CHECK_THAT(
       document->world()->defaultLayer()->children(),
       Catch::UnorderedEquals(
-        std::vector<Model::Node*>{groupNode, linkedGroupNode, linkedBrushNode2}));
-    CHECK(groupNode->group().linkedGroupId().has_value());
-    CHECK(linkedGroupNode->group().linkedGroupId().has_value());
+        std::vector<Model::Node*>{groupNode, linkedGroupNode, linkedEntityNode2}));
+    CHECK(groupNode->group().linkedGroupId() != std::nullopt);
+    CHECK(linkedGroupNode->group().linkedGroupId() != std::nullopt);
     CHECK(groupNode->group().linkedGroupId() == linkedGroupNode->group().linkedGroupId());
+
+    CHECK(entityNode->entity().linkId() != std::nullopt);
+    CHECK(linkedEntityNode->entity().linkId() == entityNode->entity().linkId());
+    CHECK(linkedEntityNode2->entity().linkId() == std::nullopt);
   }
 
   SECTION(
@@ -461,15 +473,16 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
     document->selectNodes({linkedGroupNode});
     document->selectNodes({linkedGroupNode2});
 
-    auto* linkedBrushNode = linkedGroupNode->children().front();
-    auto* linkedBrushNode2 = linkedGroupNode2->children().front();
-
     document->ungroupSelection();
     CHECK_THAT(
       document->world()->defaultLayer()->children(),
       Catch::UnorderedEquals(
-        std::vector<Model::Node*>{groupNode, linkedBrushNode, linkedBrushNode2}));
-    CHECK_FALSE(groupNode->group().linkedGroupId().has_value());
+        std::vector<Model::Node*>{groupNode, linkedEntityNode, linkedEntityNode2}));
+    CHECK_FALSE(groupNode->group().linkedGroupId() != std::nullopt);
+
+    CHECK(entityNode->entity().linkId() == std::nullopt);
+    CHECK(linkedEntityNode->entity().linkId() == std::nullopt);
+    CHECK(linkedEntityNode2->entity().linkId() == std::nullopt);
   }
 
   SECTION("Given three linked groups, we ungroup all of them")
@@ -478,14 +491,15 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
     document->selectNodes({linkedGroupNode});
     document->selectNodes({linkedGroupNode2});
 
-    auto* linkedBrushNode = linkedGroupNode->children().front();
-    auto* linkedBrushNode2 = linkedGroupNode2->children().front();
-
     document->ungroupSelection();
     CHECK_THAT(
       document->world()->defaultLayer()->children(),
       Catch::UnorderedEquals(
-        std::vector<Model::Node*>{brushNode, linkedBrushNode, linkedBrushNode2}));
+        std::vector<Model::Node*>{entityNode, linkedEntityNode, linkedEntityNode2}));
+
+    CHECK(entityNode->entity().linkId() == std::nullopt);
+    CHECK(linkedEntityNode->entity().linkId() == std::nullopt);
+    CHECK(linkedEntityNode2->entity().linkId() == std::nullopt);
   }
 
   document->undoCommand();
@@ -493,11 +507,15 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
     document->world()->defaultLayer()->children(),
     Catch::UnorderedEquals(
       std::vector<Model::Node*>{groupNode, linkedGroupNode, linkedGroupNode2}));
-  CHECK(groupNode->group().linkedGroupId().has_value());
-  CHECK(linkedGroupNode->group().linkedGroupId().has_value());
-  CHECK(linkedGroupNode2->group().linkedGroupId().has_value());
+  CHECK(groupNode->group().linkedGroupId() != std::nullopt);
+  CHECK(linkedGroupNode->group().linkedGroupId() != std::nullopt);
+  CHECK(linkedGroupNode2->group().linkedGroupId() != std::nullopt);
   CHECK(groupNode->group().linkedGroupId() == linkedGroupNode->group().linkedGroupId());
   CHECK(groupNode->group().linkedGroupId() == linkedGroupNode2->group().linkedGroupId());
+
+  CHECK(entityNode->entity().linkId() != std::nullopt);
+  CHECK(linkedEntityNode->entity().linkId() == entityNode->entity().linkId());
+  CHECK(linkedEntityNode2->entity().linkId() == entityNode->entity().linkId());
 }
 
 TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.createLinkedDuplicate")
