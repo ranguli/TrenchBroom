@@ -146,7 +146,7 @@ const GroupNode* findOutermostClosedGroup(const Node* node)
   return findOutermostClosedGroup(const_cast<Node*>(node));
 }
 
-std::vector<GroupNode*> findLinkedGroups(
+std::vector<GroupNode*> collectLinkedGroups(
   const std::vector<Node*>& nodes, const std::string& linkedGroupId)
 {
   auto result = std::vector<GroupNode*>{};
@@ -173,7 +173,7 @@ std::vector<GroupNode*> findLinkedGroups(
   return result;
 }
 
-std::vector<GroupNode*> findAllLinkedGroups(const std::vector<Node*>& nodes)
+std::vector<GroupNode*> collectAllLinkedGroups(const std::vector<Node*>& nodes)
 {
   auto result = std::vector<GroupNode*>{};
 
