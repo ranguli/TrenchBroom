@@ -255,12 +255,12 @@ TEST_CASE_METHOD(MapDocumentTest, "CopyPasteTest.copyPasteGroupResetsDuplicateGr
     document->deselectAll();
     REQUIRE(document->paste(str) == PasteType::Node);
 
-    auto* pastedGroupNode = dynamic_cast<Model::GroupNode*>(
+    auto* pastedGroupNodeNode = dynamic_cast<Model::GroupNode*>(
       document->world()->defaultLayer()->children().back());
-    REQUIRE(pastedGroupNode != nullptr);
-    REQUIRE(pastedGroupNode != groupNode);
+    REQUIRE(pastedGroupNodeNode != nullptr);
+    REQUIRE(pastedGroupNodeNode != groupNode);
 
-    CHECK(pastedGroupNode->persistentId() != persistentGroupId);
+    CHECK(pastedGroupNodeNode->persistentId() != persistentGroupId);
   }
 
   SECTION("Cut and paste retains persistent group ID")
@@ -269,12 +269,12 @@ TEST_CASE_METHOD(MapDocumentTest, "CopyPasteTest.copyPasteGroupResetsDuplicateGr
     document->deselectAll();
     REQUIRE(document->paste(str) == PasteType::Node);
 
-    auto* pastedGroupNode = dynamic_cast<Model::GroupNode*>(
+    auto* pastedGroupNodeNode = dynamic_cast<Model::GroupNode*>(
       document->world()->defaultLayer()->children().back());
-    REQUIRE(pastedGroupNode != nullptr);
-    REQUIRE(pastedGroupNode != groupNode);
+    REQUIRE(pastedGroupNodeNode != nullptr);
+    REQUIRE(pastedGroupNodeNode != groupNode);
 
-    CHECK(pastedGroupNode->persistentId() == persistentGroupId);
+    CHECK(pastedGroupNodeNode->persistentId() == persistentGroupId);
   }
 }
 
@@ -337,18 +337,18 @@ TEST_CASE_METHOD(MapDocumentTest, "CopyPasteTest.pasteInGroup")
 TEST_CASE_METHOD(
   MapDocumentTest, "CopyPasteTest.copyPasteGroupResetsDuplicatedLinkedGroupId")
 {
-  auto* brushNode = createBrushNode();
-  document->addNodes({{document->parentForNodes(), {brushNode}}});
-  document->selectNodes({brushNode});
+  auto* entityNode = new Model::EntityNode{Model::Entity{}};
+  document->addNodes({{document->parentForNodes(), {entityNode}}});
+  document->selectNodes({entityNode});
 
   auto* groupNode = document->groupSelection("test");
 
   document->deselectAll();
   document->selectNodes({groupNode});
-  auto* linkedGroup = document->createLinkedDuplicate();
+  auto* linkedGroupNode = document->createLinkedDuplicate();
 
   document->deselectAll();
-  document->selectNodes({linkedGroup});
+  document->selectNodes({linkedGroupNode});
   const auto data = document->serializeSelectedNodes();
 
   document->deselectAll();
@@ -364,11 +364,16 @@ TEST_CASE_METHOD(
     CHECK(document->paste(data) == PasteType::Node);
     CHECK(document->world()->defaultLayer()->childCount() == 1);
 
-    const auto* pastedGroup = dynamic_cast<Model::GroupNode*>(
+    const auto* pastedGroupNode = dynamic_cast<Model::GroupNode*>(
       document->world()->defaultLayer()->children().back());
-    REQUIRE(pastedGroup);
+    REQUIRE(pastedGroupNode);
 
-    CHECK(pastedGroup->group().linkedGroupId() == std::nullopt);
+    const auto* pastedEntityNode =
+      dynamic_cast<Model::EntityNode*>(pastedGroupNode->children().front());
+    REQUIRE(pastedEntityNode);
+
+    CHECK(pastedGroupNode->group().linkedGroupId() == std::nullopt);
+    CHECK(pastedEntityNode->entity().linkId() == std::nullopt);
   }
 
   SECTION("Pasting duplicate linked group ID")
@@ -379,11 +384,16 @@ TEST_CASE_METHOD(
     CHECK(document->paste(data) == PasteType::Node);
     CHECK(document->world()->defaultLayer()->childCount() == 3);
 
-    const auto* pastedGroup = dynamic_cast<Model::GroupNode*>(
+    const auto* pastedGroupNode = dynamic_cast<Model::GroupNode*>(
       document->world()->defaultLayer()->children().back());
-    REQUIRE(pastedGroup);
+    REQUIRE(pastedGroupNode);
 
-    CHECK(pastedGroup->group().linkedGroupId() == linkedGroupId);
+    const auto* pastedEntityNode =
+      dynamic_cast<Model::EntityNode*>(pastedGroupNode->children().front());
+    REQUIRE(pastedEntityNode);
+
+    CHECK(pastedGroupNode->group().linkedGroupId() == linkedGroupId);
+    CHECK(pastedEntityNode->entity().linkId() == entityNode->entity().linkId());
   }
 
   SECTION("Pasting recursive linked group")
@@ -392,18 +402,28 @@ TEST_CASE_METHOD(
 
     CHECK(document->paste(data) == PasteType::Node);
     CHECK(groupNode->childCount() == 2);
-    CHECK(linkedGroup->childCount() == 2);
+    CHECK(linkedGroupNode->childCount() == 2);
 
-    auto* pastedGroup = dynamic_cast<Model::GroupNode*>(groupNode->children().back());
-    REQUIRE(pastedGroup);
+    auto* pastedGroupNode = dynamic_cast<Model::GroupNode*>(groupNode->children().back());
+    REQUIRE(pastedGroupNode);
 
-    CHECK(pastedGroup->group().linkedGroupId() == std::nullopt);
+    const auto* pastedEntityNode =
+      dynamic_cast<Model::EntityNode*>(pastedGroupNode->children().front());
+    REQUIRE(pastedEntityNode);
 
-    auto* linkedPastedGroup =
-      dynamic_cast<Model::GroupNode*>(linkedGroup->children().back());
-    REQUIRE(linkedPastedGroup);
+    CHECK(pastedGroupNode->group().linkedGroupId() == std::nullopt);
+    CHECK(pastedEntityNode->entity().linkId() == std::nullopt);
 
-    CHECK(linkedPastedGroup->group().linkedGroupId() == std::nullopt);
+    auto* linkedPastedGroupNode =
+      dynamic_cast<Model::GroupNode*>(linkedGroupNode->children().back());
+    REQUIRE(linkedPastedGroupNode);
+
+    const auto* linkedPastedEntityNode =
+      dynamic_cast<Model::EntityNode*>(linkedPastedGroupNode->children().front());
+    REQUIRE(linkedPastedEntityNode);
+
+    CHECK(linkedPastedGroupNode->group().linkedGroupId() == std::nullopt);
+    CHECK(linkedPastedEntityNode->entity().linkId() == std::nullopt);
   }
 }
 

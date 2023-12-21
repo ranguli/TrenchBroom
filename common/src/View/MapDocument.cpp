@@ -852,21 +852,42 @@ bool MapDocument::pasteNodes(const std::vector<Model::Node*>& nodes)
     }
   }
 
+  // Set entity link IDs and then add the nodes
+  return kdl::fold_results(
+           kdl::vec_transform(
+             nodesToAdd,
+             [&](auto& newParentAndNodesToAdd) {
+               const auto& nodesToAddToParent = newParentAndNodesToAdd.second;
+               return kdl::fold_results(kdl::vec_transform(
+                 Model::collectAllLinkedGroupIds(nodesToAddToParent),
+                 [&](const auto& linkedGroupId) {
+                   const auto& existingLinkedGroups =
+                     Model::collectLinkedGroups({m_world.get()}, linkedGroupId);
+                   const auto linkedGroupsToAdd =
+                     Model::collectLinkedGroups(nodesToAddToParent, linkedGroupId);
+                   assert(!existingLinkedGroups.empty());
 
-  auto transaction = Transaction{*this, "Paste Nodes"};
+                   return Model::initializeEntityLinkIds(
+                     *existingLinkedGroups.front(), linkedGroupsToAdd);
+                 }));
+             }))
+    .transform([&]() {
+      auto transaction = Transaction{*this, "Paste Nodes"};
 
-  const auto addedNodes = addNodes(nodesToAdd);
-  if (addedNodes.empty())
-  {
-    transaction.cancel();
-    return false;
-  }
+      const auto addedNodes = addNodes(nodesToAdd);
+      if (addedNodes.empty())
+      {
+        transaction.cancel();
+        return false;
+      }
 
-  deselectAll();
-  selectNodes(Model::collectSelectableNodes(addedNodes, editorContext()));
-  transaction.commit();
-
-  return true;
+      deselectAll();
+      selectNodes(Model::collectSelectableNodes(addedNodes, editorContext()));
+      transaction.commit();
+    })
+    .if_error(
+      [&](const auto& e) { error() << "Could not paste linked groups: " << e.msg; })
+    .is_success();
 }
 
 bool MapDocument::pasteBrushFaces(const std::vector<Model::BrushFace>& faces)
