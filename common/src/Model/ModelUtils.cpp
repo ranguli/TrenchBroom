@@ -196,6 +196,29 @@ std::vector<GroupNode*> collectAllLinkedGroups(const std::vector<Node*>& nodes)
   return result;
 }
 
+std::vector<std::string> collectAllLinkedGroupIds(const std::vector<Node*>& nodes)
+{
+  auto result = std::vector<std::string>{};
+
+  Node::visitAll(
+    nodes,
+    kdl::overload(
+      [](auto&& thisLambda, WorldNode* w) { w->visitChildren(thisLambda); },
+      [](auto&& thisLambda, LayerNode* l) { l->visitChildren(thisLambda); },
+      [&](auto&& thisLambda, GroupNode* g) {
+        if (const auto linkedGroupId = g->group().linkedGroupId())
+        {
+          result.push_back(*linkedGroupId);
+        }
+        g->visitChildren(thisLambda);
+      },
+      [](EntityNode*) {},
+      [](BrushNode*) {},
+      [](PatchNode*) {}));
+
+  return kdl::vec_sort_and_remove_duplicates(std::move(result));
+}
+
 std::vector<std::string> collectParentLinkedGroupIds(const Node& parentNode)
 {
   auto result = std::vector<std::string>{};
@@ -679,7 +702,7 @@ SelectionResult nodeSelectionWithLinkedGroupConstraints(
       {
         // find the others and add them to the lock list
         for (GroupNode* otherGroup :
-             findLinkedGroups({&world}, *group->group().linkedGroupId()))
+             collectLinkedGroups({&world}, *group->group().linkedGroupId()))
         {
           if (otherGroup == group)
           {

@@ -675,40 +675,9 @@ std::string MapDocument::serializeSelectedBrushFaces()
   return stream.str();
 }
 
-template <typename O>
-static void getLinkedGroupIdsRecursively(const std::vector<Model::Node*>& nodes, O out)
-{
-  Model::Node::visitAll(
-    nodes,
-    kdl::overload(
-      [](auto&& thisLambda, const Model::WorldNode* worldNode) {
-        worldNode->visitChildren(thisLambda);
-      },
-      [](auto&& thisLambda, const Model::LayerNode* layerNode) {
-        layerNode->visitChildren(thisLambda);
-      },
-      [&](auto&& thisLambda, const Model::GroupNode* groupNode) {
-        if (const auto& linkedGroupId = groupNode->group().linkedGroupId())
-        {
-          out++ = *linkedGroupId;
-        }
-        groupNode->visitChildren(thisLambda);
-      },
-      [](const Model::EntityNode*) {},
-      [](const Model::BrushNode*) {},
-      [](const Model::PatchNode*) {}));
-}
-
-static auto getLinkedGroupIdsRecursively(const std::vector<Model::Node*>& nodes)
-{
-  auto linkedGroupIds = std::vector<std::string>{};
-  getLinkedGroupIdsRecursively(nodes, std::back_inserter(linkedGroupIds));
-  return kdl::vec_sort_and_remove_duplicates(std::move(linkedGroupIds));
-}
-
 PasteType MapDocument::paste(const std::string& str)
 {
-  const auto linkedGroupIds = getLinkedGroupIdsRecursively({m_world.get()});
+  const auto linkedGroupIds = Model::collectAllLinkedGroupIds({m_world.get()});
 
   // Try parsing as entities, then as brushes, in all compatible formats
   const std::vector<Model::Node*> nodes = m_game->parseNodes(
@@ -1532,18 +1501,6 @@ std::vector<Model::Node*> MapDocument::addNodes(
   return addedNodes;
 }
 
-static std::vector<std::string> getLinkedGroupIdsRecursively(
-  const std::map<Model::Node*, std::vector<Model::Node*>>& parentChildrenMap)
-{
-  auto linkedGroupIds = std::vector<std::string>{};
-  for (const auto& [parent, children] : parentChildrenMap)
-  {
-    getLinkedGroupIdsRecursively(children, std::back_inserter(linkedGroupIds));
-  }
-
-  return kdl::vec_sort_and_remove_duplicates(std::move(linkedGroupIds));
-}
-
 /**
  * Removes the given nodes. If this causes any groups/entities to become empty, removes
  * them as well.
@@ -1562,7 +1519,7 @@ void MapDocument::removeNodes(const std::vector<Model::Node*>& nodes)
   {
     linkedGroupIdsOfRemovedGroups = kdl::vec_concat(
       std::move(linkedGroupIdsOfRemovedGroups),
-      getLinkedGroupIdsRecursively(removableNodes));
+      Model::collectAllLinkedGroupIds(kdl::vec_flatten(kdl::map_values(removableNodes))));
 
     closeRemovedGroups(removableNodes);
     executeAndStore(AddRemoveNodesCommand::remove(removableNodes));
