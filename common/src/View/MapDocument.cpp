@@ -59,6 +59,7 @@
 #include "Model/LayerNode.h"
 #include "Model/LinkSourceValidator.h"
 #include "Model/LinkTargetValidator.h"
+#include "Model/LinkedGroupUtils.h"
 #include "Model/LockState.h"
 #include "Model/LongPropertyKeyValidator.h"
 #include "Model/LongPropertyValueValidator.h"
@@ -103,6 +104,7 @@
 #include "View/UpdateLinkedGroupsHelper.h"
 #include "View/ViewEffectsService.h"
 
+#include "kdl/grouped_range.h"
 #include <kdl/collection_utils.h>
 #include <kdl/map_utils.h>
 #include <kdl/memory_utils.h>
@@ -2418,6 +2420,35 @@ void MapDocument::separateSelectedLinkedGroups(const bool relinkGroups)
   for (const auto& groupNodes : groupsToRelink)
   {
     linkGroups(groupNodes);
+  }
+}
+
+void MapDocument::initializeEntityLinkIds(MapDocument*)
+{
+  const auto linkedGroups = kdl::vec_sort(
+    Model::findAllLinkedGroups({m_world.get()}), [](const auto& lhs, const auto& rhs) {
+      return lhs->group().linkedGroupId() < rhs->group().linkedGroupId();
+    });
+
+  const auto linkedGroupsById =
+    kdl::make_grouped_range(linkedGroups, [](const auto& lhs, const auto& rhs) {
+      return lhs->group().linkedGroupId() == rhs->group().linkedGroupId();
+    });
+
+  for (const auto& linkSet : linkedGroupsById)
+  {
+    Model::initializeEntityLinkIds({linkSet.begin(), linkSet.end()})
+      .transform_error([&](const auto& e) {
+        const auto& linkedGroupId = (*linkSet.begin())->group().linkedGroupId();
+        error() << "Unlinking linked group with ID " << *linkedGroupId << ": " << e.msg;
+
+        for (auto* linkedGroupNode : linkSet)
+        {
+          auto group = linkedGroupNode->group();
+          group.resetLinkedGroupId();
+          linkedGroupNode->setGroup(std::move(group));
+        }
+      });
   }
 }
 
@@ -5024,6 +5055,12 @@ void MapDocument::connectObservers()
     modsDidChangeNotifier.connect(this, &MapDocument::updateAllFaceTags);
   m_notifierConnection +=
     textureCollectionsDidChangeNotifier.connect(this, &MapDocument::updateAllFaceTags);
+
+  // entity link management
+  m_notifierConnection +=
+    documentWasNewedNotifier.connect(this, &MapDocument::initializeEntityLinkIds);
+  m_notifierConnection +=
+    documentWasLoadedNotifier.connect(this, &MapDocument::initializeEntityLinkIds);
 }
 
 void MapDocument::textureCollectionsWillChange()

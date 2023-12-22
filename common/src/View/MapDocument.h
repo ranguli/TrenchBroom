@@ -505,6 +505,8 @@ protected:
 private:
   void separateSelectedLinkedGroups(bool relinkGroups);
 
+  void initializeEntityLinkIds(MapDocument* document);
+
 public: // layer management
   void renameLayer(Model::LayerNode* layer, const std::string& name);
 

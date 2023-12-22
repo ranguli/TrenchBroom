@@ -21,6 +21,7 @@
 #include "Assets/PropertyDefinition.h"
 #include "Error.h"
 #include "Exceptions.h"
+#include "IO/TestEnvironment.h"
 #include "IO/WorldReader.h"
 #include "MapDocumentTest.h"
 #include "Model/BrushBuilder.h"
@@ -842,6 +843,128 @@ TEST_CASE_METHOD(MapDocumentTest, "resetDefaultProperties")
         {"default_prop_a", "default_value_a"},
         {"default_prop_b", "default_value_b"},
       }));
+  }
+}
+
+TEST_CASE("initializeEntityLinkIdsAfterLoad")
+{
+  auto testEnvironment = IO::TestEnvironment{};
+
+  SECTION("Two linked groups with one entity each")
+  {
+    testEnvironment.withTempFile(
+      R"(
+{
+"classname" "worldspawn"
+}
+{
+"classname" "func_group"
+"_tb_type" "_tb_group"
+"_tb_name" "test"
+"_tb_id" "1"
+"_tb_linked_group_id" "{2b081a34-9c3e-4349-86e2-7a897ed71ec8}"
+"_tb_transformation" "1 0 0 192 0 1 0 0 0 0 1 0 0 0 0 1"
+}
+{
+"classname" "info_player_coop"
+"origin" "192 0 40"
+"_tb_group" "1"
+}
+{
+"classname" "func_group"
+"_tb_type" "_tb_group"
+"_tb_name" "test"
+"_tb_id" "2"
+"_tb_linked_group_id" "{2b081a34-9c3e-4349-86e2-7a897ed71ec8}"
+"_tb_transformation" "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"
+}
+{
+"classname" "info_player_coop"
+"origin" "0 0 40"
+"_tb_group" "2"
+}
+  )",
+      [&](const auto& path) {
+        auto [document, game, gameConfig] =
+          View::loadMapDocument(path, "Quake", Model::MapFormat::Unknown);
+
+        const auto& worldNode = *document->world();
+        const auto& defaultLayer = *worldNode.defaultLayer();
+        REQUIRE(defaultLayer.childCount() == 2);
+
+        const auto* linkedGroupNode1 =
+          dynamic_cast<Model::GroupNode*>(defaultLayer.children().front());
+        const auto* linkedGroupNode2 =
+          dynamic_cast<Model::GroupNode*>(defaultLayer.children().back());
+
+        REQUIRE(linkedGroupNode1);
+        REQUIRE(linkedGroupNode2);
+
+        CHECK(linkedGroupNode1->group().linkedGroupId());
+        CHECK(linkedGroupNode2->group().linkedGroupId());
+
+        const auto* linkedEntityNode1 =
+          dynamic_cast<Model::EntityNode*>(linkedGroupNode1->children().front());
+        const auto* linkedEntityNode2 =
+          dynamic_cast<Model::EntityNode*>(linkedGroupNode2->children().front());
+
+        REQUIRE(linkedEntityNode1);
+        REQUIRE(linkedEntityNode2);
+
+        CHECK(linkedEntityNode1->entity().linkId());
+        CHECK(
+          linkedEntityNode1->entity().linkId() == linkedEntityNode2->entity().linkId());
+      });
+  }
+
+  SECTION("Linked groups with structural mismatch are unlinked")
+  {
+    testEnvironment.withTempFile(
+      R"(
+{
+"classname" "worldspawn"
+}
+{
+"classname" "func_group"
+"_tb_type" "_tb_group"
+"_tb_name" "test"
+"_tb_id" "1"
+"_tb_linked_group_id" "{2b081a34-9c3e-4349-86e2-7a897ed71ec8}"
+"_tb_transformation" "1 0 0 192 0 1 0 0 0 0 1 0 0 0 0 1"
+}
+{
+"classname" "info_player_coop"
+"origin" "192 0 40"
+"_tb_group" "1"
+}
+{
+"classname" "func_group"
+"_tb_type" "_tb_group"
+"_tb_name" "test"
+"_tb_id" "2"
+"_tb_linked_group_id" "{2b081a34-9c3e-4349-86e2-7a897ed71ec8}"
+"_tb_transformation" "1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"
+}
+  )",
+      [&](const auto& path) {
+        auto [document, game, gameConfig] =
+          View::loadMapDocument(path, "Quake", Model::MapFormat::Unknown);
+
+        const auto& worldNode = *document->world();
+        const auto& defaultLayer = *worldNode.defaultLayer();
+        REQUIRE(defaultLayer.childCount() == 2);
+
+        const auto* groupNode1 =
+          dynamic_cast<Model::GroupNode*>(defaultLayer.children().front());
+        const auto* groupNode2 =
+          dynamic_cast<Model::GroupNode*>(defaultLayer.children().back());
+
+        REQUIRE(groupNode1);
+        REQUIRE(groupNode2);
+
+        CHECK(groupNode1->group().linkedGroupId() == std::nullopt);
+        CHECK(groupNode2->group().linkedGroupId() == std::nullopt);
+      });
   }
 }
 
