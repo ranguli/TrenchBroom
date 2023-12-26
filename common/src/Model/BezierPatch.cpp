@@ -78,6 +78,16 @@ BezierPatch::BezierPatch(BezierPatch&& other) noexcept = default;
 BezierPatch& BezierPatch::operator=(const BezierPatch& other) = default;
 BezierPatch& BezierPatch::operator=(BezierPatch&& other) noexcept = default;
 
+const std::optional<std::string>& BezierPatch::linkId() const
+{
+  return m_linkId;
+}
+
+void BezierPatch::setLinkId(std::optional<std::string> linkId)
+{
+  m_linkId = std::move(linkId);
+}
+
 size_t BezierPatch::pointRowCount() const
 {
   return m_pointRowCount;

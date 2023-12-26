@@ -145,7 +145,7 @@ const Model::BrushFace* findFaceByPoints(
 void checkFaceTexCoordSystem(const Model::BrushFace& face, bool expectParallel);
 void checkBrushTexCoordSystem(const Model::BrushNode* brushNode, bool expectParallel);
 
-void setLinkId(GroupNode& node, std::optional<std::string> linkId);
+void setLinkId(Node& node, std::optional<std::string> linkId);
 } // namespace Model
 
 namespace View

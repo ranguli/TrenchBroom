@@ -381,11 +381,31 @@ void checkBrushTexCoordSystem(
   checkFaceTexCoordSystem(faces[5], expectParallel);
 }
 
-void setLinkId(GroupNode& groupNode, std::optional<std::string> linkId)
+void setLinkId(Node& node, std::optional<std::string> linkId)
 {
-  auto group = groupNode.group();
-  group.setLinkId(std::move(linkId));
-  groupNode.setGroup(std::move(group));
+  node.accept(kdl::overload(
+    [](const WorldNode*) {},
+    [](const LayerNode*) {},
+    [&](GroupNode* groupNode) {
+      auto group = groupNode->group();
+      group.setLinkId(std::move(linkId));
+      groupNode->setGroup(std::move(group));
+    },
+    [&](EntityNode* entityNode) {
+      auto entity = entityNode->entity();
+      entity.setLinkId(std::move(linkId));
+      entityNode->setEntity(std::move(entity));
+    },
+    [&](BrushNode* brushNode) {
+      auto brush = brushNode->brush();
+      brush.setLinkId(std::move(linkId));
+      brushNode->setBrush(std::move(brush));
+    },
+    [&](PatchNode* patchNode) {
+      auto patch = patchNode->patch();
+      patch.setLinkId(std::move(linkId));
+      patchNode->setPatch(std::move(patch));
+    }));
 }
 } // namespace Model
 

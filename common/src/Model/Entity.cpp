@@ -106,6 +106,16 @@ Entity& Entity::operator=(Entity&& other) = default;
 
 Entity::~Entity() = default;
 
+const std::optional<std::string>& Entity::linkId() const
+{
+  return m_linkId;
+}
+
+void Entity::setLinkId(std::optional<std::string> linkId)
+{
+  m_linkId = std::move(linkId);
+}
+
 void Entity::setProperties(
   const EntityPropertyConfig& propertyConfig, std::vector<EntityProperty> properties)
 {

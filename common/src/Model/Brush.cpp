@@ -173,6 +173,16 @@ const vm::bbox3& Brush::bounds() const
   return m_geometry->bounds();
 }
 
+const std::optional<std::string>& Brush::linkId() const
+{
+  return m_linkId;
+}
+
+void Brush::setLinkId(std::optional<std::string> linkId)
+{
+  m_linkId = std::move(linkId);
+}
+
 std::optional<size_t> Brush::findFace(const std::string& textureName) const
 {
   return kdl::vec_index_of(m_faces, [&](const BrushFace& face) {
