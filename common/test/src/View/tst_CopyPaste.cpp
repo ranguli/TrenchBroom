@@ -334,8 +334,7 @@ TEST_CASE_METHOD(MapDocumentTest, "CopyPasteTest.pasteInGroup")
   CHECK(light->parent() == group);
 }
 
-TEST_CASE_METHOD(
-  MapDocumentTest, "CopyPasteTest.copyPasteGroupResetsDuplicatedLinkedGroupId")
+TEST_CASE_METHOD(MapDocumentTest, "CopyPasteTest.copyPasteGroupResetsDuplicatedLinkId")
 {
   auto* brushNode = createBrushNode();
   document->addNodes({{document->parentForNodes(), {brushNode}}});
@@ -355,8 +354,8 @@ TEST_CASE_METHOD(
 
   SECTION("Pasting unknown linked group ID")
   {
-    const auto linkedGroupId = groupNode->group().linkedGroupId();
-    REQUIRE(linkedGroupId);
+    const auto linkId = groupNode->group().linkId();
+    REQUIRE(linkId);
 
     document->selectAllNodes();
     document->deleteObjects();
@@ -368,13 +367,13 @@ TEST_CASE_METHOD(
       document->world()->defaultLayer()->children().back());
     REQUIRE(pastedGroup);
 
-    CHECK(pastedGroup->group().linkedGroupId() == std::nullopt);
+    CHECK(pastedGroup->group().linkId() == std::nullopt);
   }
 
   SECTION("Pasting duplicate linked group ID")
   {
-    const auto linkedGroupId = groupNode->group().linkedGroupId();
-    REQUIRE(linkedGroupId);
+    const auto linkId = groupNode->group().linkId();
+    REQUIRE(linkId);
 
     CHECK(document->paste(data) == PasteType::Node);
     CHECK(document->world()->defaultLayer()->childCount() == 3);
@@ -383,7 +382,7 @@ TEST_CASE_METHOD(
       document->world()->defaultLayer()->children().back());
     REQUIRE(pastedGroup);
 
-    CHECK(pastedGroup->group().linkedGroupId() == linkedGroupId);
+    CHECK(pastedGroup->group().linkId() == linkId);
   }
 
   SECTION("Pasting recursive linked group")
@@ -397,13 +396,13 @@ TEST_CASE_METHOD(
     auto* pastedGroup = dynamic_cast<Model::GroupNode*>(groupNode->children().back());
     REQUIRE(pastedGroup);
 
-    CHECK(pastedGroup->group().linkedGroupId() == std::nullopt);
+    CHECK(pastedGroup->group().linkId() == std::nullopt);
 
     auto* linkedPastedGroup =
       dynamic_cast<Model::GroupNode*>(linkedGroup->children().back());
     REQUIRE(linkedPastedGroup);
 
-    CHECK(linkedPastedGroup->group().linkedGroupId() == std::nullopt);
+    CHECK(linkedPastedGroup->group().linkId() == std::nullopt);
   }
 }
 

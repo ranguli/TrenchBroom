@@ -79,7 +79,7 @@ TEST_CASE("convertToString")
       m_layer: Layer{m_defaultLayer: 1, m_name: Default Layer, m_sortIndex: nullopt, m_color: nullopt, m_omitFromExport: 0},
       m_children: [
         GroupNode{
-          m_group: Group{m_name: group, m_linkedGroupId: nullopt, m_transformation: 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1},
+          m_group: Group{m_name: group, m_linkId: nullopt, m_transformation: 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1},
           m_children: [
             EntityNode{
               m_entity: Entity{m_properties: [], m_protectedProperties: []},

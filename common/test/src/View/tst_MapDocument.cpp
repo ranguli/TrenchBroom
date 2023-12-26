@@ -435,7 +435,7 @@ TEST_CASE_METHOD(MapDocumentTest, "selectByLineNumber")
 TEST_CASE_METHOD(MapDocumentTest, "canUpdateLinkedGroups")
 {
   auto* innerGroupNode = new Model::GroupNode{Model::Group{"inner"}};
-  setLinkedGroupId(*innerGroupNode, "asdf");
+  setLinkId(*innerGroupNode, "asdf");
 
   auto* entityNode = new Model::EntityNode{Model::Entity{}};
   innerGroupNode->addChild(entityNode);

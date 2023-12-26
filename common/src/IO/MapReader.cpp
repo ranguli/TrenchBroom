@@ -469,15 +469,15 @@ CreateNodeResult createGroupNode(const MapReader::EntityInfo& entityInfo)
   auto group = Model::Group{name};
   auto nodeIssues = std::vector<NodeIssue>{};
 
-  const auto& linkedGroupId = findEntityPropertyOrDefault(
-    entityInfo.properties, Model::EntityPropertyKeys::LinkedGroupId);
-  if (!linkedGroupId.empty())
+  const auto& linkId =
+    findEntityPropertyOrDefault(entityInfo.properties, Model::EntityPropertyKeys::LinkId);
+  if (!linkId.empty())
   {
     const auto& transformationStr = findEntityPropertyOrDefault(
       entityInfo.properties, Model::EntityPropertyKeys::GroupTransformation);
     if (const auto transformation = vm::parse<FloatType, 4u, 4u>(transformationStr))
     {
-      group.setLinkedGroupId(linkedGroupId);
+      group.setLinkId(linkId);
       group.setTransformation(*transformation);
     }
     else
@@ -697,7 +697,7 @@ void validateDuplicateLayersAndGroups(
 void unlinkGroup(Model::GroupNode& groupNode)
 {
   auto newGroup = groupNode.group();
-  newGroup.resetLinkedGroupId();
+  newGroup.resetLinkId();
   newGroup.setTransformation(vm::mat4x4::identity());
   groupNode.setGroup(std::move(newGroup));
 }
@@ -708,9 +708,9 @@ void validateOrphanedLinkedGroups(
   ParserStatus& status)
 {
   auto linkedGroupCounts = std::unordered_map<std::string, size_t>{};
-  for (const auto& linkedGroupId : linkedGroupsToKeep)
+  for (const auto& linkId : linkedGroupsToKeep)
   {
-    linkedGroupCounts[linkedGroupId] = 1;
+    linkedGroupCounts[linkId] = 1;
   }
 
   for (const auto& nodeInfo : nodeInfos)
@@ -721,9 +721,9 @@ void validateOrphanedLinkedGroups(
         [](const Model::WorldNode*) {},
         [](const Model::LayerNode*) {},
         [&](const Model::GroupNode* groupNode) {
-          if (const auto linkedGroupId = groupNode->group().linkedGroupId())
+          if (const auto linkId = groupNode->group().linkId())
           {
-            linkedGroupCounts[*linkedGroupId]++;
+            linkedGroupCounts[*linkId]++;
           }
         },
         [](const Model::EntityNode*) {},
@@ -740,14 +740,14 @@ void validateOrphanedLinkedGroups(
         [](const Model::WorldNode*) {},
         [](const Model::LayerNode*) {},
         [&](Model::GroupNode* groupNode) {
-          if (const auto linkedGroupId = groupNode->group().linkedGroupId())
+          if (const auto linkId = groupNode->group().linkId())
           {
-            if (linkedGroupCounts[*linkedGroupId] == 1)
+            if (linkedGroupCounts[*linkId] == 1)
             {
               status.error(
                 groupNode->lineNumber(),
                 kdl::str_to_string(
-                  "Unlinking orphaned linked group with ID '", *linkedGroupId, "'"));
+                  "Unlinking orphaned linked group with ID '", *linkId, "'"));
               unlinkGroup(*groupNode);
             }
           }
@@ -796,12 +796,11 @@ void logValidationIssues(
   }
 }
 
-bool isRecursiveLinkedGroup(
-  const std::string& nestedLinkedGroupId, Model::Node* parentNode)
+bool isRecursiveLinkedGroup(const std::string& nestedLinkId, Model::Node* parentNode)
 {
   if (auto* parentGroupNode = dynamic_cast<Model::GroupNode*>(parentNode))
   {
-    return nestedLinkedGroupId == parentGroupNode->group().linkedGroupId();
+    return nestedLinkId == parentGroupNode->group().linkId();
   }
   return false;
 }
@@ -817,12 +816,12 @@ void validateRecursiveLinkedGroups(
     {
       if (auto* groupNode = dynamic_cast<Model::GroupNode*>(nodeInfo->node.get()))
       {
-        if (const auto groupNodeLinkedGroupId = groupNode->group().linkedGroupId())
+        if (const auto groupNodeLinkId = groupNode->group().linkId())
         {
           auto iParent = nodeToParentMap.find(groupNode);
           while (iParent != nodeToParentMap.end())
           {
-            if (isRecursiveLinkedGroup(*groupNodeLinkedGroupId, iParent->second))
+            if (isRecursiveLinkedGroup(*groupNodeLinkId, iParent->second))
             {
               status.error(
                 groupNode->lineNumber(),

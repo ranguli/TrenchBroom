@@ -99,7 +99,7 @@ GroupNode* findContainingLinkedGroup(Node& node)
   auto* containingGroupNode = findContainingGroup(&node);
   while (containingGroupNode)
   {
-    if (containingGroupNode->group().linkedGroupId().has_value())
+    if (containingGroupNode->group().linkId().has_value())
     {
       return containingGroupNode;
     }
@@ -147,7 +147,7 @@ const GroupNode* findOutermostClosedGroup(const Node* node)
 }
 
 std::vector<GroupNode*> findLinkedGroups(
-  const std::vector<Node*>& nodes, const std::string& linkedGroupId)
+  const std::vector<Node*>& nodes, const std::string& linkId)
 {
   auto result = std::vector<GroupNode*>{};
 
@@ -157,7 +157,7 @@ std::vector<GroupNode*> findLinkedGroups(
       [](auto&& thisLambda, WorldNode* w) { w->visitChildren(thisLambda); },
       [](auto&& thisLambda, LayerNode* l) { l->visitChildren(thisLambda); },
       [&](auto&& thisLambda, GroupNode* g) {
-        if (g->group().linkedGroupId() == linkedGroupId)
+        if (g->group().linkId() == linkId)
         {
           result.push_back(g);
         }
@@ -183,7 +183,7 @@ std::vector<GroupNode*> findAllLinkedGroups(const std::vector<Node*>& nodes)
       [](auto&& thisLambda, WorldNode* w) { w->visitChildren(thisLambda); },
       [](auto&& thisLambda, LayerNode* l) { l->visitChildren(thisLambda); },
       [&](auto&& thisLambda, GroupNode* g) {
-        if (g->group().linkedGroupId())
+        if (g->group().linkId())
         {
           result.push_back(g);
         }
@@ -196,7 +196,7 @@ std::vector<GroupNode*> findAllLinkedGroups(const std::vector<Node*>& nodes)
   return result;
 }
 
-std::vector<std::string> collectParentLinkedGroupIds(const Node& parentNode)
+std::vector<std::string> collectParentLinkIds(const Node& parentNode)
 {
   auto result = std::vector<std::string>{};
   const auto* currentNode = &parentNode;
@@ -204,9 +204,9 @@ std::vector<std::string> collectParentLinkedGroupIds(const Node& parentNode)
   {
     if (const auto* currentGroupNode = dynamic_cast<const GroupNode*>(currentNode))
     {
-      if (const auto& linkedGroupId = currentGroupNode->group().linkedGroupId())
+      if (const auto& linkId = currentGroupNode->group().linkId())
       {
-        result.push_back(*linkedGroupId);
+        result.push_back(*linkId);
       }
     }
     currentNode = currentNode->parent();
@@ -678,8 +678,7 @@ SelectionResult nodeSelectionWithLinkedGroupConstraints(
       for (GroupNode* group : linkedGroupsContainingNode)
       {
         // find the others and add them to the lock list
-        for (GroupNode* otherGroup :
-             findLinkedGroups({&world}, *group->group().linkedGroupId()))
+        for (GroupNode* otherGroup : findLinkedGroups({&world}, *group->group().linkId()))
         {
           if (otherGroup == group)
           {

@@ -876,7 +876,7 @@ TEST_CASE("NodeWriterTest.writeMapWithLinkedGroups")
   SECTION("Group nodes with linked group ID does write ID and transformation")
   {
     group = groupNode->group();
-    group.setLinkedGroupId("asdf");
+    group.setLinkId("asdf");
     groupNode->setGroup(std::move(group));
 
     auto* groupNodeClone =
@@ -887,8 +887,7 @@ TEST_CASE("NodeWriterTest.writeMapWithLinkedGroups")
     groupNodeClone->setGroup(std::move(groupClone));
 
     worldNode.defaultLayer()->addChild(groupNodeClone);
-    REQUIRE(
-      groupNodeClone->group().linkedGroupId() == groupNode->group().linkedGroupId());
+    REQUIRE(groupNodeClone->group().linkId() == groupNode->group().linkId());
 
     std::stringstream str;
     NodeWriter writer(worldNode, str);
@@ -933,7 +932,7 @@ TEST_CASE("NodeWriterTest.writeNodesWithLinkedGroup")
 
   auto group = Model::Group("Group");
   group.transform(vm::translation_matrix(vm::vec3(32.0, 0.0, 0.0)));
-  group.setLinkedGroupId("asdf");
+  group.setLinkId("asdf");
 
   auto* groupNode = new Model::GroupNode(std::move(group));
   worldNode.defaultLayer()->addChild(groupNode);
@@ -945,7 +944,7 @@ TEST_CASE("NodeWriterTest.writeNodesWithLinkedGroup")
   groupNodeClone->setGroup(std::move(groupClone));
 
   worldNode.defaultLayer()->addChild(groupNodeClone);
-  REQUIRE(groupNodeClone->group().linkedGroupId() == groupNode->group().linkedGroupId());
+  REQUIRE(groupNodeClone->group().linkId() == groupNode->group().linkId());
 
   std::stringstream str;
   NodeWriter writer(worldNode, str);

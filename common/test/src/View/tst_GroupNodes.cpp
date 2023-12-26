@@ -449,9 +449,9 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
       document->world()->defaultLayer()->children(),
       Catch::UnorderedEquals(
         std::vector<Model::Node*>{groupNode, linkedGroupNode, linkedBrushNode2}));
-    CHECK(groupNode->group().linkedGroupId().has_value());
-    CHECK(linkedGroupNode->group().linkedGroupId().has_value());
-    CHECK(groupNode->group().linkedGroupId() == linkedGroupNode->group().linkedGroupId());
+    CHECK(groupNode->group().linkId().has_value());
+    CHECK(linkedGroupNode->group().linkId().has_value());
+    CHECK(groupNode->group().linkId() == linkedGroupNode->group().linkId());
   }
 
   SECTION(
@@ -469,7 +469,7 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
       document->world()->defaultLayer()->children(),
       Catch::UnorderedEquals(
         std::vector<Model::Node*>{groupNode, linkedBrushNode, linkedBrushNode2}));
-    CHECK_FALSE(groupNode->group().linkedGroupId().has_value());
+    CHECK_FALSE(groupNode->group().linkId().has_value());
   }
 
   SECTION("Given three linked groups, we ungroup all of them")
@@ -493,11 +493,11 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLinkedGroups")
     document->world()->defaultLayer()->children(),
     Catch::UnorderedEquals(
       std::vector<Model::Node*>{groupNode, linkedGroupNode, linkedGroupNode2}));
-  CHECK(groupNode->group().linkedGroupId().has_value());
-  CHECK(linkedGroupNode->group().linkedGroupId().has_value());
-  CHECK(linkedGroupNode2->group().linkedGroupId().has_value());
-  CHECK(groupNode->group().linkedGroupId() == linkedGroupNode->group().linkedGroupId());
-  CHECK(groupNode->group().linkedGroupId() == linkedGroupNode2->group().linkedGroupId());
+  CHECK(groupNode->group().linkId().has_value());
+  CHECK(linkedGroupNode->group().linkId().has_value());
+  CHECK(linkedGroupNode2->group().linkId().has_value());
+  CHECK(groupNode->group().linkId() == linkedGroupNode->group().linkId());
+  CHECK(groupNode->group().linkId() == linkedGroupNode2->group().linkId());
 }
 
 TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.createLinkedDuplicate")
@@ -641,19 +641,19 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodestTest.separateGroups")
     auto* linkedGroupNode = document->createLinkedDuplicate();
     REQUIRE_THAT(*linkedGroupNode, Model::MatchesNode(*groupNode));
 
-    const auto originalLinkedGroupId = groupNode->group().linkedGroupId();
+    const auto originalLinkId = groupNode->group().linkId();
 
     document->deselectAll();
     document->selectNodes({linkedGroupNode});
 
     CHECK(document->canSeparateLinkedGroups());
     document->separateLinkedGroups();
-    CHECK(groupNode->group().linkedGroupId() == std::nullopt);
-    CHECK(linkedGroupNode->group().linkedGroupId() == std::nullopt);
+    CHECK(groupNode->group().linkId() == std::nullopt);
+    CHECK(linkedGroupNode->group().linkId() == std::nullopt);
 
     document->undoCommand();
-    CHECK(groupNode->group().linkedGroupId() == originalLinkedGroupId);
-    CHECK(linkedGroupNode->group().linkedGroupId() == originalLinkedGroupId);
+    CHECK(groupNode->group().linkId() == originalLinkId);
+    CHECK(linkedGroupNode->group().linkId() == originalLinkId);
   }
 
   SECTION("Separating multiple groups from a link set with several members")
@@ -666,30 +666,28 @@ TEST_CASE_METHOD(MapDocumentTest, "GroupNodestTest.separateGroups")
     REQUIRE_THAT(*linkedGroupNode2, Model::MatchesNode(*groupNode));
     REQUIRE_THAT(*linkedGroupNode3, Model::MatchesNode(*groupNode));
 
-    const auto originalLinkedGroupId = groupNode->group().linkedGroupId();
+    const auto originalLinkId = groupNode->group().linkId();
 
     document->deselectAll();
     document->selectNodes({linkedGroupNode2, linkedGroupNode3});
     CHECK(document->canSeparateLinkedGroups());
 
     document->separateLinkedGroups();
-    CHECK(groupNode->group().linkedGroupId() == originalLinkedGroupId);
-    CHECK(linkedGroupNode1->group().linkedGroupId() == originalLinkedGroupId);
+    CHECK(groupNode->group().linkId() == originalLinkId);
+    CHECK(linkedGroupNode1->group().linkId() == originalLinkId);
 
-    CHECK(linkedGroupNode2->group().linkedGroupId() != std::nullopt);
-    CHECK(linkedGroupNode2->group().linkedGroupId() != originalLinkedGroupId);
-    CHECK(
-      linkedGroupNode3->group().linkedGroupId()
-      == linkedGroupNode2->group().linkedGroupId());
+    CHECK(linkedGroupNode2->group().linkId() != std::nullopt);
+    CHECK(linkedGroupNode2->group().linkId() != originalLinkId);
+    CHECK(linkedGroupNode3->group().linkId() == linkedGroupNode2->group().linkId());
 
     CHECK(document->selectedNodes().groupCount() == 2u);
 
     document->undoCommand();
 
-    CHECK(groupNode->group().linkedGroupId() == originalLinkedGroupId);
-    CHECK(linkedGroupNode1->group().linkedGroupId() == originalLinkedGroupId);
-    CHECK(linkedGroupNode2->group().linkedGroupId() == originalLinkedGroupId);
-    CHECK(linkedGroupNode3->group().linkedGroupId() == originalLinkedGroupId);
+    CHECK(groupNode->group().linkId() == originalLinkId);
+    CHECK(linkedGroupNode1->group().linkId() == originalLinkId);
+    CHECK(linkedGroupNode2->group().linkId() == originalLinkId);
+    CHECK(linkedGroupNode3->group().linkId() == originalLinkId);
   }
 }
 

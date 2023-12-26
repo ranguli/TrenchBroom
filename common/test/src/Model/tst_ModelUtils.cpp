@@ -193,8 +193,8 @@ TEST_CASE("ModelUtils.findLinkedGroups")
   auto* groupNode2 = new GroupNode{Group{"Group 2"}};
   auto* groupNode3 = new GroupNode{Group{"Group 3"}};
 
-  setLinkedGroupId(*groupNode1, "group1");
-  setLinkedGroupId(*groupNode2, "group2");
+  setLinkId(*groupNode1, "group1");
+  setLinkId(*groupNode2, "group2");
 
   auto* linkedGroupNode1_1 =
     static_cast<Model::GroupNode*>(groupNode1->cloneRecursively(worldBounds));
@@ -242,8 +242,8 @@ TEST_CASE("ModelUtils.findAllLinkedGroups")
   auto* groupNode2 = new GroupNode{Group{"Group 2"}};
   auto* groupNode3 = new GroupNode{Group{"Group 3"}};
 
-  setLinkedGroupId(*groupNode1, "group1");
-  setLinkedGroupId(*groupNode2, "group2");
+  setLinkId(*groupNode1, "group1");
+  setLinkId(*groupNode2, "group2");
 
   auto* linkedGroupNode1_1 =
     static_cast<Model::GroupNode*>(groupNode1->cloneRecursively(worldBounds));

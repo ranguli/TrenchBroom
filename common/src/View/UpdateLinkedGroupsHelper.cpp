@@ -52,13 +52,12 @@ auto compareByAncestry(const Model::GroupNode* lhs, const Model::GroupNode* rhs)
 
 bool checkLinkedGroupsToUpdate(const std::vector<Model::GroupNode*>& changedLinkedGroups)
 {
-  const auto linkedGroupIds =
+  const auto linkIds =
     kdl::vec_sort(kdl::vec_transform(changedLinkedGroups, [](const auto* groupNode) {
-      return groupNode->group().linkedGroupId();
+      return groupNode->group().linkId();
     }));
 
-  return std::adjacent_find(std::begin(linkedGroupIds), std::end(linkedGroupIds))
-         == std::end(linkedGroupIds);
+  return std::adjacent_find(std::begin(linkIds), std::end(linkIds)) == std::end(linkIds);
 }
 
 UpdateLinkedGroupsHelper::UpdateLinkedGroupsHelper(
@@ -140,18 +139,17 @@ Result<UpdateLinkedGroupsHelper::LinkedGroupUpdates> UpdateLinkedGroupsHelper::
   }
 
   const auto& worldBounds = document.worldBounds();
-  return kdl::fold_results(
-           kdl::vec_transform(
-             changedLinkedGroups,
-             [&](const auto* groupNode) {
-               const auto groupNodesToUpdate = kdl::vec_erase(
-                 Model::findLinkedGroups(
-                   {document.world()}, *groupNode->group().linkedGroupId()),
-                 groupNode);
+  return kdl::fold_results(kdl::vec_transform(
+                             changedLinkedGroups,
+                             [&](const auto* groupNode) {
+                               const auto groupNodesToUpdate = kdl::vec_erase(
+                                 Model::findLinkedGroups(
+                                   {document.world()}, *groupNode->group().linkId()),
+                                 groupNode);
 
-               return Model::updateLinkedGroups(
-                 *groupNode, groupNodesToUpdate, worldBounds);
-             }))
+                               return Model::updateLinkedGroups(
+                                 *groupNode, groupNodesToUpdate, worldBounds);
+                             }))
     .and_then([&](auto nestedUpdateLists) -> Result<LinkedGroupUpdates> {
       return kdl::vec_flatten(std::move(nestedUpdateLists));
     });

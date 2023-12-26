@@ -56,7 +56,7 @@ std::vector<LinkRenderer::LineVertex> GroupLinkRenderer::getLinks()
   if (selectedGroupNodes.size() == 1u)
   {
     const auto* selectedGroupNode = selectedGroupNodes.front();
-    if (selectedGroupNode->group().linkedGroupId().has_value())
+    if (selectedGroupNode->group().linkId().has_value())
     {
       groupNode = selectedGroupNode;
     }
@@ -64,10 +64,9 @@ std::vector<LinkRenderer::LineVertex> GroupLinkRenderer::getLinks()
 
   if (groupNode != nullptr)
   {
-    if (const auto linkedGroupId = groupNode->group().linkedGroupId())
+    if (const auto linkId = groupNode->group().linkId())
     {
-      const auto linkedGroupNodes =
-        Model::findLinkedGroups({document->world()}, *linkedGroupId);
+      const auto linkedGroupNodes = Model::findLinkedGroups({document->world()}, *linkId);
 
       const auto linkColor = pref(Preferences::LinkedGroupColor);
       const auto sourcePosition = getLinkAnchorPosition(*groupNode);

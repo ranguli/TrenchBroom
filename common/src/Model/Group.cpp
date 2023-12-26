@@ -43,19 +43,19 @@ void Group::setName(std::string name)
   m_name = std::move(name);
 }
 
-const std::optional<std::string>& Group::linkedGroupId() const
+const std::optional<std::string>& Group::linkId() const
 {
-  return m_linkedGroupId;
+  return m_linkId;
 }
 
-void Group::setLinkedGroupId(std::string linkedGroupId)
+void Group::setLinkId(std::string linkId)
 {
-  m_linkedGroupId = std::move(linkedGroupId);
+  m_linkId = std::move(linkId);
 }
 
-void Group::resetLinkedGroupId()
+void Group::resetLinkId()
 {
-  m_linkedGroupId = std::nullopt;
+  m_linkId = std::nullopt;
 }
 
 const vm::mat4x4& Group::transformation() const

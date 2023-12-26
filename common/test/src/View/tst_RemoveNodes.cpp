@@ -227,10 +227,10 @@ TEST_CASE_METHOD(MapDocumentTest, "RemoveNodesTest.unlinkSingletonLinkedGroups")
   auto* groupNode = document->groupSelection("group");
   auto* linkedGroupNode = document->createLinkedDuplicate();
 
-  REQUIRE(groupNode->group().linkedGroupId().has_value());
+  REQUIRE(groupNode->group().linkId().has_value());
 
   document->removeNodes({linkedGroupNode});
-  CHECK_FALSE(groupNode->group().linkedGroupId().has_value());
+  CHECK_FALSE(groupNode->group().linkId().has_value());
 }
 } // namespace View
 } // namespace TrenchBroom

@@ -381,10 +381,10 @@ void checkBrushTexCoordSystem(
   checkFaceTexCoordSystem(faces[5], expectParallel);
 }
 
-void setLinkedGroupId(GroupNode& groupNode, std::string linkedGroupId)
+void setLinkId(GroupNode& groupNode, std::string linkId)
 {
   auto group = groupNode.group();
-  group.setLinkedGroupId(std::move(linkedGroupId));
+  group.setLinkId(std::move(linkId));
   groupNode.setGroup(std::move(group));
 }
 } // namespace Model

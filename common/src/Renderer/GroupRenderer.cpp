@@ -264,7 +264,7 @@ bool GroupRenderer::shouldRenderGroup(const Model::GroupNode* group) const
 
 AttrString GroupRenderer::groupString(const Model::GroupNode* groupNode) const
 {
-  if (groupNode->group().linkedGroupId())
+  if (groupNode->group().linkId())
   {
     return groupNode->name() + " (linked)";
   }
@@ -276,8 +276,8 @@ AttrString GroupRenderer::groupString(const Model::GroupNode* groupNode) const
 
 Color GroupRenderer::groupColor(const Model::GroupNode* groupNode) const
 {
-  return groupNode->group().linkedGroupId() ? pref(Preferences::LinkedGroupColor)
-                                            : pref(Preferences::DefaultGroupColor);
+  return groupNode->group().linkId() ? pref(Preferences::LinkedGroupColor)
+                                     : pref(Preferences::DefaultGroupColor);
 }
 } // namespace Renderer
 } // namespace TrenchBroom
