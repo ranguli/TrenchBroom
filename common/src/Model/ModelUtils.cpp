@@ -146,7 +146,7 @@ const GroupNode* findOutermostClosedGroup(const Node* node)
   return findOutermostClosedGroup(const_cast<Node*>(node));
 }
 
-std::vector<GroupNode*> findLinkedGroups(
+std::vector<GroupNode*> collectLinkedGroups(
   const std::vector<Node*>& nodes, const std::string& linkId)
 {
   auto result = std::vector<GroupNode*>{};
@@ -173,7 +173,7 @@ std::vector<GroupNode*> findLinkedGroups(
   return result;
 }
 
-std::vector<GroupNode*> findAllLinkedGroups(const std::vector<Node*>& nodes)
+std::vector<GroupNode*> collectNestedLinkedGroups(const std::vector<Node*>& nodes)
 {
   auto result = std::vector<GroupNode*>{};
 
@@ -678,7 +678,8 @@ SelectionResult nodeSelectionWithLinkedGroupConstraints(
       for (GroupNode* group : linkedGroupsContainingNode)
       {
         // find the others and add them to the lock list
-        for (GroupNode* otherGroup : findLinkedGroups({&world}, *group->group().linkId()))
+        for (GroupNode* otherGroup :
+             collectLinkedGroups({&world}, *group->group().linkId()))
         {
           if (otherGroup == group)
           {
