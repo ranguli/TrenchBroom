@@ -20,17 +20,25 @@
 #include "WorldReader.h"
 
 #include "Color.h"
+#include "Error.h"
 #include "IO/ParserStatus.h"
 #include "Model/BrushNode.h"
 #include "Model/Entity.h"
 #include "Model/EntityProperties.h"
 #include "Model/LayerNode.h"
+#include "Model/LinkedGroupUtils.h"
 #include "Model/LockState.h"
+#include "Model/ModelUtils.h"
 #include "Model/VisibilityState.h"
 #include "Model/WorldNode.h"
 
+#include "kdl/grouped_range.h"
+#include "kdl/result.h"
+#include "kdl/vector_utils.h"
 #include <kdl/string_utils.h>
 #include <kdl/vector_set.h>
+
+#include <fmt/format.h>
 
 #include <cassert>
 #include <sstream>
@@ -161,6 +169,39 @@ void sanitizeLayerSortIndicies(Model::WorldNode& worldNode, ParserStatus& /* sta
     layerNode->setLayer(std::move(layer));
   }
 }
+
+void setLinkIds(Model::WorldNode& worldNode, ParserStatus& status)
+{
+  const auto linkedGroups = kdl::vec_sort(
+    Model::collectNestedLinkedGroups({&worldNode}), [](const auto* lhs, const auto* rhs) {
+      return lhs->group().linkId() < rhs->group().linkId();
+    });
+  const auto linkedGroupsByLinkId =
+    kdl::make_grouped_range(linkedGroups, [](const auto* lhs, const auto* rhs) {
+      return lhs->group().linkId() == rhs->group().linkId();
+    });
+
+  for (const auto linkedGroupsWithId : linkedGroupsByLinkId)
+  {
+    Model::initializeLinkIds(
+      std::vector(linkedGroupsWithId.begin(), linkedGroupsWithId.end()))
+      .transform_error([&](auto e) {
+        const auto& linkId = linkedGroupsWithId.front()->group().linkId();
+        status.error(fmt::format(
+          "Could not initialize link IDs, unlinking groups with ID {}: {}",
+          *linkId,
+          e.msg));
+
+        for (auto& linkedGroupNode : linkedGroupsWithId)
+        {
+          auto group = linkedGroupNode->group();
+          group.setLinkId(std::nullopt);
+          linkedGroupNode->setGroup(std::move(group));
+        }
+      });
+  }
+}
+
 } // namespace
 
 std::unique_ptr<Model::WorldNode> WorldReader::read(
@@ -168,6 +209,7 @@ std::unique_ptr<Model::WorldNode> WorldReader::read(
 {
   readEntities(worldBounds, status);
   sanitizeLayerSortIndicies(*m_worldNode, status);
+  setLinkIds(*m_worldNode, status);
   m_worldNode->rebuildNodeTree();
   m_worldNode->enableNodeTreeUpdates();
   return std::move(m_worldNode);
