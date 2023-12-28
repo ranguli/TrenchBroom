@@ -48,14 +48,9 @@ const std::optional<std::string>& Group::linkId() const
   return m_linkId;
 }
 
-void Group::setLinkId(std::string linkId)
+void Group::setLinkId(std::optional<std::string> linkId)
 {
   m_linkId = std::move(linkId);
-}
-
-void Group::resetLinkId()
-{
-  m_linkId = std::nullopt;
 }
 
 const vm::mat4x4& Group::transformation() const

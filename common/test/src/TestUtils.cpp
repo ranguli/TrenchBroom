@@ -381,7 +381,7 @@ void checkBrushTexCoordSystem(
   checkFaceTexCoordSystem(faces[5], expectParallel);
 }
 
-void setLinkId(GroupNode& groupNode, std::string linkId)
+void setLinkId(GroupNode& groupNode, std::optional<std::string> linkId)
 {
   auto group = groupNode.group();
   group.setLinkId(std::move(linkId));

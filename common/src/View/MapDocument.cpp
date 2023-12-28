@@ -866,7 +866,7 @@ bool MapDocument::pasteNodes(const std::vector<Model::Node*>& nodes)
             {
               warn() << "Unlinking recursive linked group with ID '" << *linkId << "'";
               auto group = groupNode->group();
-              group.resetLinkId();
+              group.setLinkId(std::nullopt);
               groupNode->setGroup(std::move(group));
             }
           }
@@ -1583,7 +1583,7 @@ void MapDocument::removeNodes(const std::vector<Model::Node*>& nodes)
     kdl::overload(
       [](Model::Layer&) { return true; },
       [&](Model::Group& group) {
-        group.resetLinkId();
+        group.setLinkId(std::nullopt);
         return true;
       },
       [](Model::Entity&) { return true; },
@@ -2239,7 +2239,7 @@ void MapDocument::unlinkGroups(const std::vector<Model::GroupNode*>& groupNodes)
     kdl::overload(
       [](Model::Layer&) { return true; },
       [&](Model::Group& group) {
-        group.resetLinkId();
+        group.setLinkId(std::nullopt);
         return true;
       },
       [](Model::Entity&) { return true; },

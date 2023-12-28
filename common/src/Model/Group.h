@@ -48,8 +48,7 @@ public:
   void setName(std::string name);
 
   const std::optional<std::string>& linkId() const;
-  void setLinkId(std::string linkId);
-  void resetLinkId();
+  void setLinkId(std::optional<std::string> linkId);
 
   const vm::mat4x4& transformation() const;
   void setTransformation(const vm::mat4x4& transformation);

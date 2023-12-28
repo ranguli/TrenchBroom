@@ -697,7 +697,7 @@ void validateDuplicateLayersAndGroups(
 void unlinkGroup(Model::GroupNode& groupNode)
 {
   auto newGroup = groupNode.group();
-  newGroup.resetLinkId();
+  newGroup.setLinkId(std::nullopt);
   newGroup.setTransformation(vm::mat4x4::identity());
   groupNode.setGroup(std::move(newGroup));
 }
