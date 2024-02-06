@@ -708,6 +708,9 @@ public: // asset management
   void reloadTextureCollections();
   void reloadEntityDefinitions();
 
+  bool isTextureCollectionEnabled(const std::string& name) const;
+  bool setTextureCollectionEnabled(const std::string& name, bool enable);
+
 private:
   void loadAssets();
   void unloadAssets();

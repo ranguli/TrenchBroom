@@ -4348,6 +4348,41 @@ void MapDocument::reloadEntityDefinitions()
   info("Reloading entity definitions");
 }
 
+bool MapDocument::isTextureCollectionEnabled(const std::string& name) const
+{
+  if (
+    const auto* textureCollectionStr =
+      m_world->entity().property(Model::EntityPropertyKeys::EnabledTextureCollections))
+  {
+    const auto textureCollections = kdl::str_split(*textureCollectionStr, ";");
+    return kdl::vec_contains(textureCollections, name);
+  }
+  return false;
+}
+
+bool MapDocument::setTextureCollectionEnabled(const std::string& name, const bool enable)
+{
+  if (
+    const auto* textureCollectionStr =
+      m_world->entity().property(Model::EntityPropertyKeys::EnabledTextureCollections))
+  {
+    const auto textureCollections = kdl::str_split(*textureCollectionStr, ";");
+    const auto isEnabled = kdl::vec_contains(textureCollections, name);
+    const auto newTextureCollections =
+      isEnabled && !enable   ? kdl::vec_erase(textureCollections, name)
+      : !isEnabled && enable ? kdl::vec_push_back(textureCollections, name)
+                             : textureCollections;
+
+    auto transaction = Transaction{
+      *this, enable ? "Enable texture collection" : "Disable texture collection"};
+    const auto success = setProperty(
+      Model::EntityPropertyKeys::EnabledTextureCollections,
+      kdl::str_join(newTextureCollections, ";"));
+    transaction.finish(success);
+  }
+  return false;
+}
+
 void MapDocument::loadAssets()
 {
   loadEntityDefinitions();
