@@ -174,6 +174,7 @@ private:
   LayoutBounds m_contentBounds;
 
   std::vector<LayoutRow> m_rows;
+  bool m_collapsed;
 
 public:
   LayoutGroup(
@@ -190,7 +191,8 @@ public:
     float minCellWidth,
     float maxCellWidth,
     float minCellHeight,
-    float maxCellHeight);
+    float maxCellHeight,
+    bool collapsed);
 
   const std::any& item() const;
   void setItem(std::any item);
@@ -207,7 +209,7 @@ public:
 
   const LayoutBounds& titleBounds() const;
   LayoutBounds titleBoundsForVisibleRect(float y, float height, float groupMargin) const;
-  const LayoutBounds& contentBounds() const;
+  LayoutBounds contentBounds() const;
   LayoutBounds bounds() const;
 
   const std::vector<LayoutRow>& rows() const;
@@ -216,6 +218,9 @@ public:
 
   bool hitTest(float x, float y) const;
   bool intersectsY(float y, float height) const;
+
+  bool collapsed() const;
+  void setCollapsed(bool collapsed);
 
   void addItem(
     std::any item,
@@ -285,10 +290,13 @@ public:
 
   void setWidth(float width);
 
+  void setCollapsed(const LayoutGroup& group, bool collapsed);
+
   const std::vector<LayoutGroup>& groups();
   const LayoutCell* cellAt(float x, float y);
+  const LayoutGroup* groupAt(float x, float y);
 
-  void addGroup(std::any groupItem, float titleHeight);
+  void addGroup(std::any groupItem, float titleHeight, bool collapsed);
   void addItem(
     std::any item,
     float itemWidth,

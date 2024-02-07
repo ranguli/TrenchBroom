@@ -348,7 +348,8 @@ LayoutGroup::LayoutGroup(
   const float minCellWidth,
   const float maxCellWidth,
   const float minCellHeight,
-  const float maxCellHeight)
+  const float maxCellHeight,
+  const bool collapsed)
   : m_item{std::move(item)}
   , m_cellMargin{cellMargin}
   , m_titleMargin{titleMargin}
@@ -361,6 +362,7 @@ LayoutGroup::LayoutGroup(
   , m_maxCellHeight{maxCellHeight}
   , m_titleBounds{0.0f, y, width + 2.0f * x, titleHeight}
   , m_contentBounds{x, y + titleHeight + m_rowMargin, width, 0.0f}
+  , m_collapsed{collapsed}
 {
 }
 
@@ -382,34 +384,36 @@ const LayoutBounds& LayoutGroup::titleBounds() const
 LayoutBounds LayoutGroup::titleBoundsForVisibleRect(
   const float y, const float height, const float groupMargin) const
 {
-  if (intersectsY(y, height) && m_titleBounds.top() < y)
+  if (intersectsY(y, height) && titleBounds().top() < y)
   {
-    if (y > m_contentBounds.bottom() - m_titleBounds.height + groupMargin)
+    if (y > contentBounds().bottom() - titleBounds().height + groupMargin)
     {
       return LayoutBounds{
-        m_titleBounds.left(),
-        m_contentBounds.bottom() - m_titleBounds.height + groupMargin,
-        m_titleBounds.width,
-        m_titleBounds.height};
+        titleBounds().left(),
+        contentBounds().bottom() - titleBounds().height + groupMargin,
+        titleBounds().width,
+        titleBounds().height};
     }
     return LayoutBounds{
-      m_titleBounds.left(), y, m_titleBounds.width, m_titleBounds.height};
+      titleBounds().left(), y, titleBounds().width, titleBounds().height};
   }
-  return m_titleBounds;
+  return titleBounds();
 }
 
-const LayoutBounds& LayoutGroup::contentBounds() const
+LayoutBounds LayoutGroup::contentBounds() const
 {
-  return m_contentBounds;
+  return m_collapsed
+           ? LayoutBounds{m_contentBounds.x, m_contentBounds.y, m_contentBounds.width, 0}
+           : m_contentBounds;
 }
 
 LayoutBounds LayoutGroup::bounds() const
 {
   return LayoutBounds{
-    m_titleBounds.left(),
-    m_titleBounds.top(),
-    m_titleBounds.width,
-    m_contentBounds.bottom() - m_titleBounds.top()};
+    titleBounds().left(),
+    titleBounds().top(),
+    titleBounds().width,
+    contentBounds().bottom() - titleBounds().top()};
 }
 
 const std::vector<LayoutRow>& LayoutGroup::rows() const
@@ -463,6 +467,16 @@ bool LayoutGroup::hitTest(const float x, const float y) const
 bool LayoutGroup::intersectsY(const float y, const float height) const
 {
   return bounds().intersectsY(y, height);
+}
+
+bool LayoutGroup::collapsed() const
+{
+  return m_collapsed;
+}
+
+void LayoutGroup::setCollapsed(const bool collapsed)
+{
+  m_collapsed = collapsed;
 }
 
 void LayoutGroup::addItem(
@@ -760,6 +774,22 @@ void CellLayout::setWidth(const float width)
   }
 }
 
+void CellLayout::setCollapsed(const LayoutGroup& group, bool collapsed)
+{
+  for (auto& g : m_groups)
+  {
+    if (&g == &group)
+    {
+      if (g.collapsed() != collapsed)
+      {
+        g.setCollapsed(collapsed);
+        invalidate();
+      }
+      return;
+    }
+  }
+}
+
 const std::vector<LayoutGroup>& CellLayout::groups()
 {
   if (!m_valid)
@@ -772,6 +802,16 @@ const std::vector<LayoutGroup>& CellLayout::groups()
 
 const LayoutCell* CellLayout::cellAt(const float x, const float y)
 {
+  if (const auto* group = groupAt(x, y))
+  {
+    return group->cellAt(x, y);
+  }
+
+  return nullptr;
+}
+
+const LayoutGroup* TrenchBroom::View::CellLayout::groupAt(const float x, const float y)
+{
   if (!m_valid)
   {
     validate();
@@ -779,26 +819,18 @@ const LayoutCell* CellLayout::cellAt(const float x, const float y)
 
   for (size_t i = 0; i < m_groups.size(); ++i)
   {
-    const auto& group = m_groups[i];
-    const auto groupBounds = group.bounds();
-    if (y > groupBounds.bottom())
+    auto& group = m_groups[i];
+    if (group.hitTest(x, y))
     {
-      continue;
-    }
-    if (y < groupBounds.top())
-    {
-      return nullptr;
-    }
-    if (const auto* cell = group.cellAt(x, y))
-    {
-      return cell;
+      return &group;
     }
   }
 
   return nullptr;
 }
 
-void CellLayout::addGroup(std::any groupItem, const float titleHeight)
+void CellLayout::addGroup(
+  std::any groupItem, const float titleHeight, const bool collapsed)
 {
   if (!m_valid)
   {
@@ -812,7 +844,7 @@ void CellLayout::addGroup(std::any groupItem, const float titleHeight)
     m_height += m_groupMargin;
   }
 
-  m_groups.emplace_back(
+  const auto& newGroup = m_groups.emplace_back(
     std::move(groupItem),
     m_outerMargin,
     y,
@@ -826,8 +858,9 @@ void CellLayout::addGroup(std::any groupItem, const float titleHeight)
     m_minCellWidth,
     m_maxCellWidth,
     m_minCellHeight,
-    m_maxCellHeight);
-  m_height += m_groups.back().bounds().height;
+    m_maxCellHeight,
+    collapsed);
+  m_height += newGroup.bounds().height;
 }
 
 void CellLayout::addItem(
@@ -869,12 +902,12 @@ void CellLayout::validate()
   m_valid = true;
   if (!m_groups.empty())
   {
-    auto copy = m_groups;
+    auto copy = std::move(m_groups);
     m_groups.clear();
 
-    for (auto& group : copy)
+    for (const auto& group : copy)
     {
-      addGroup(group.item(), group.titleBounds().height);
+      addGroup(group.item(), group.titleBounds().height, group.collapsed());
       for (const auto& row : group.rows())
       {
         for (const auto& cell : row.cells())

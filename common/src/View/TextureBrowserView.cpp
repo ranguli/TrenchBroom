@@ -150,9 +150,13 @@ void TextureBrowserView::doReloadLayout(Layout& layout)
 
   const auto font = Renderer::FontDescriptor{fontPath, static_cast<size_t>(fontSize)};
 
-  for (const auto& collection : getCollections())
+  auto document = kdl::mem_lock(m_document);
+  const auto& collections = document->textureManager().collections();
+
+  for (const auto& collection : collections)
   {
-    layout.addGroup(&collection, static_cast<float>(fontSize) + 2.0f);
+    const auto collapsed = !document->isTextureCollectionEnabled(collection.name());
+    layout.addGroup(&collection, static_cast<float>(fontSize) + 2.0f, collapsed);
     addTexturesToLayout(layout, getTextures(collection), collection.name(), font);
   }
 }
@@ -212,12 +216,6 @@ void TextureBrowserView::addTextureToLayout(
     scaledTextureHeight,
     maxCellWidth,
     totalSize.y());
-}
-
-const std::vector<Assets::TextureCollection>& TextureBrowserView::getCollections() const
-{
-  auto document = kdl::mem_lock(m_document);
-  return document->textureManager().collections();
 }
 
 std::vector<const Assets::Texture*> TextureBrowserView::getTextures(
@@ -316,7 +314,7 @@ void TextureBrowserView::renderBounds(Layout& layout, const float y, const float
 
   for (const auto& group : layout.groups())
   {
-    if (group.intersectsY(y, height))
+    if (!group.collapsed() && group.intersectsY(y, height))
     {
       for (const auto& row : group.rows())
       {
@@ -377,7 +375,7 @@ void TextureBrowserView::renderTextures(Layout& layout, const float y, const flo
 
   for (const auto& group : layout.groups())
   {
-    if (group.intersectsY(y, height))
+    if (!group.collapsed() && group.intersectsY(y, height))
     {
       for (const auto& row : group.rows())
       {
@@ -506,54 +504,58 @@ TextureBrowserView::StringMap TextureBrowserView::collectStringVertices(
           std::end(vertices), std::begin(titleVertices), std::end(titleVertices));
       }
 
-      for (const auto& row : group.rows())
+      if (!group.collapsed())
       {
-        if (row.intersectsY(y, height))
+        for (const auto& row : group.rows())
         {
-          for (const auto& cell : row.cells())
+          if (row.intersectsY(y, height))
           {
-            const auto titleBounds = cell.titleBounds();
-            const auto& textureFont = fontManager().font(cellData(cell).mainTitleFont);
-            const auto& groupFont = fontManager().font(cellData(cell).subTitleFont);
+            for (const auto& cell : row.cells())
+            {
+              const auto titleBounds = cell.titleBounds();
+              const auto& textureFont = fontManager().font(cellData(cell).mainTitleFont);
+              const auto& groupFont = fontManager().font(cellData(cell).subTitleFont);
 
-            // y is relative to top, but OpenGL coords are relative to bottom, so invert
-            const auto titleOffset =
-              vm::vec2f(titleBounds.left(), y + height - titleBounds.bottom());
+              // y is relative to top, but OpenGL coords are relative to bottom, so invert
+              const auto titleOffset =
+                vm::vec2f(titleBounds.left(), y + height - titleBounds.bottom());
 
-            const auto textureNameOffset = titleOffset + cellData(cell).mainTitleOffset;
-            const auto groupNameOffset = titleOffset + cellData(cell).subTitleOffset;
+              const auto textureNameOffset = titleOffset + cellData(cell).mainTitleOffset;
+              const auto groupNameOffset = titleOffset + cellData(cell).subTitleOffset;
 
-            const auto& textureName = cellData(cell).mainTitle;
-            const auto& groupName = cellData(cell).subTitle;
+              const auto& textureName = cellData(cell).mainTitle;
+              const auto& groupName = cellData(cell).subTitle;
 
-            const auto textureNameQuads =
-              textureFont.quads(textureName, false, textureNameOffset);
-            const auto groupNameQuads =
-              groupFont.quads(groupName, false, groupNameOffset);
+              const auto textureNameQuads =
+                textureFont.quads(textureName, false, textureNameOffset);
+              const auto groupNameQuads =
+                groupFont.quads(groupName, false, groupNameOffset);
 
-            const auto textureNameVertices = TextVertex::toList(
-              textureNameQuads.size() / 2,
-              kdl::skip_iterator{
-                std::begin(textureNameQuads), std::end(textureNameQuads), 0, 2},
-              kdl::skip_iterator{
-                std::begin(textureNameQuads), std::end(textureNameQuads), 1, 2},
-              kdl::skip_iterator{std::begin(textColor), std::end(textColor), 0, 0});
+              const auto textureNameVertices = TextVertex::toList(
+                textureNameQuads.size() / 2,
+                kdl::skip_iterator{
+                  std::begin(textureNameQuads), std::end(textureNameQuads), 0, 2},
+                kdl::skip_iterator{
+                  std::begin(textureNameQuads), std::end(textureNameQuads), 1, 2},
+                kdl::skip_iterator{std::begin(textColor), std::end(textColor), 0, 0});
 
-            const auto groupNameVertices = TextVertex::toList(
-              groupNameQuads.size() / 2,
-              kdl::skip_iterator{
-                std::begin(groupNameQuads), std::end(groupNameQuads), 0, 2},
-              kdl::skip_iterator{
-                std::begin(groupNameQuads), std::end(groupNameQuads), 1, 2},
-              kdl::skip_iterator{std::begin(subTextColor), std::end(subTextColor), 0, 0});
+              const auto groupNameVertices = TextVertex::toList(
+                groupNameQuads.size() / 2,
+                kdl::skip_iterator{
+                  std::begin(groupNameQuads), std::end(groupNameQuads), 0, 2},
+                kdl::skip_iterator{
+                  std::begin(groupNameQuads), std::end(groupNameQuads), 1, 2},
+                kdl::skip_iterator{
+                  std::begin(subTextColor), std::end(subTextColor), 0, 0});
 
-            auto& mainTitleVertices = stringVertices[cellData(cell).mainTitleFont];
-            mainTitleVertices =
-              kdl::vec_concat(std::move(mainTitleVertices), textureNameVertices);
+              auto& mainTitleVertices = stringVertices[cellData(cell).mainTitleFont];
+              mainTitleVertices =
+                kdl::vec_concat(std::move(mainTitleVertices), textureNameVertices);
 
-            auto& subTitleVertices = stringVertices[cellData(cell).subTitleFont];
-            subTitleVertices =
-              kdl::vec_concat(std::move(subTitleVertices), groupNameVertices);
+              auto& subTitleVertices = stringVertices[cellData(cell).subTitleFont];
+              subTitleVertices =
+                kdl::vec_concat(std::move(subTitleVertices), groupNameVertices);
+            }
           }
         }
       }
@@ -565,14 +567,22 @@ TextureBrowserView::StringMap TextureBrowserView::collectStringVertices(
 
 void TextureBrowserView::doLeftClick(Layout& layout, const float x, const float y)
 {
-  if (const auto* cell = layout.cellAt(x, y))
+  if (const auto* group = layout.groupAt(x, y);
+      group && group->titleBounds().containsPoint(x, y))
+  {
+    const auto& textureCollection = *group->itemAs<const Assets::TextureCollection*>();
+    auto document = kdl::mem_lock(m_document);
+    document->setTextureCollectionEnabled(textureCollection.name(), group->collapsed());
+    invalidate();
+  }
+  else if (const auto* cell = layout.cellAt(x, y))
   {
     if (!cellData(*cell).texture->overridden())
     {
       auto* texture = cellData(*cell).texture;
 
-      // NOTE: wx had the ability for the textureSelected event to veto the selection, but
-      // it wasn't used.
+      // NOTE: wx had the ability for the textureSelected event to veto the selection,
+      // but it wasn't used.
       setSelectedTexture(texture);
 
       emit textureSelected(texture);

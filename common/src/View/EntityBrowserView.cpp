@@ -147,7 +147,7 @@ void EntityBrowserView::doReloadLayout(Layout& layout)
 
     if (!definitions.empty())
     {
-      layout.addGroup(&group, static_cast<float>(fontSize) + 2.0f);
+      layout.addGroup(&group, static_cast<float>(fontSize) + 2.0f, false);
       addEntitiesToLayout(layout, definitions, font);
     }
   }

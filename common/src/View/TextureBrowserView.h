@@ -110,7 +110,6 @@ private:
     const std::string& groupName,
     const Renderer::FontDescriptor& font);
 
-  const std::vector<Assets::TextureCollection>& getCollections() const;
   std::vector<const Assets::Texture*> getTextures(
     const Assets::TextureCollection& collection) const;
   std::vector<const Assets::Texture*> getTextures() const;
