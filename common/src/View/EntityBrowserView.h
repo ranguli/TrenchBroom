@@ -90,7 +90,6 @@ private:
   Logger& m_logger;
   vm::quatf m_rotation;
 
-  bool m_group = false;
   bool m_hideUnused = false;
   Assets::EntityDefinitionSortOrder m_sortOrder;
   std::string m_filterText;
@@ -111,7 +110,6 @@ public:
     std::optional<EL::Expression> defaultModelScaleExpression);
 
   void setSortOrder(Assets::EntityDefinitionSortOrder sortOrder);
-  void setGroup(bool group);
   void setHideUnused(bool hideUnused);
   void setFilterText(const std::string& filterText);
 

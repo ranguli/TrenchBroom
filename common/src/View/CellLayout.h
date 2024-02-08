@@ -192,20 +192,6 @@ public:
     float minCellHeight,
     float maxCellHeight);
 
-  LayoutGroup(
-    float x,
-    float y,
-    float cellMargin,
-    float titleMargin,
-    float rowMargin,
-    float width,
-    size_t maxCellsPerRow,
-    float maxUpScale,
-    float minCellWidth,
-    float maxCellWidth,
-    float minCellHeight,
-    float maxCellHeight);
-
   const std::string& item() const;
 
   const LayoutBounds& titleBounds() const;

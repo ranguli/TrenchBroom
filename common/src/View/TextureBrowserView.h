@@ -69,7 +69,6 @@ private:
   using StringMap = std::map<Renderer::FontDescriptor, std::vector<TextVertex>>;
 
   std::weak_ptr<MapDocument> m_document;
-  bool m_group = false;
   bool m_hideUnused = false;
   TextureSortOrder m_sortOrder = TextureSortOrder::Name;
   std::string m_filterText;
@@ -86,7 +85,6 @@ public:
   ~TextureBrowserView() override;
 
   void setSortOrder(TextureSortOrder sortOrder);
-  void setGroup(bool group);
   void setHideUnused(bool hideUnused);
   void setFilterText(const std::string& filterText);
 

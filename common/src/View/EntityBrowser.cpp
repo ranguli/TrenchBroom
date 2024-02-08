@@ -102,13 +102,6 @@ void EntityBrowser::createGui(GLContextManager& contextManager)
       m_view->setSortOrder(sortOrder);
     });
 
-  m_groupButton = new QPushButton{tr("Group")};
-  m_groupButton->setToolTip(tr("Group entity definitions by category"));
-  m_groupButton->setCheckable(true);
-  connect(m_groupButton, &QAbstractButton::clicked, this, [=]() {
-    m_view->setGroup(m_groupButton->isChecked());
-  });
-
   m_usedButton = new QPushButton{tr("Used")};
   m_usedButton->setToolTip(tr("Only show entity definitions currently in use"));
   m_usedButton->setCheckable(true);
@@ -129,7 +122,6 @@ void EntityBrowser::createGui(GLContextManager& contextManager)
     LayoutConstants::NarrowVMargin);
   controlSizer->setSpacing(LayoutConstants::NarrowHMargin);
   controlSizer->addWidget(m_sortOrderChoice, 0);
-  controlSizer->addWidget(m_groupButton, 0);
   controlSizer->addWidget(m_usedButton, 0);
   controlSizer->addWidget(m_filterBox, 1);
 

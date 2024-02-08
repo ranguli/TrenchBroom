@@ -101,16 +101,6 @@ void EntityBrowserView::setSortOrder(const Assets::EntityDefinitionSortOrder sor
   }
 }
 
-void EntityBrowserView::setGroup(const bool group)
-{
-  if (group != m_group)
-  {
-    m_group = group;
-    invalidate();
-    update();
-  }
-}
-
 void EntityBrowserView::setHideUnused(const bool hideUnused)
 {
   if (hideUnused != m_hideUnused)
@@ -150,27 +140,18 @@ void EntityBrowserView::doReloadLayout(Layout& layout)
 
   const auto font = Renderer::FontDescriptor{fontPath, static_cast<size_t>(fontSize)};
 
-  if (m_group)
+  for (const auto& group : m_entityDefinitionManager.groups())
   {
-    for (const auto& group : m_entityDefinitionManager.groups())
+    const auto& definitions =
+      group.definitions(Assets::EntityDefinitionType::PointEntity, m_sortOrder);
+
+    if (!definitions.empty())
     {
-      const auto& definitions =
-        group.definitions(Assets::EntityDefinitionType::PointEntity, m_sortOrder);
+      const auto displayName = group.displayName();
+      layout.addGroup(displayName, static_cast<float>(fontSize) + 2.0f);
 
-      if (!definitions.empty())
-      {
-        const auto displayName = group.displayName();
-        layout.addGroup(displayName, static_cast<float>(fontSize) + 2.0f);
-
-        addEntitiesToLayout(layout, definitions, font);
-      }
+      addEntitiesToLayout(layout, definitions, font);
     }
-  }
-  else
-  {
-    const auto& definitions = m_entityDefinitionManager.definitions(
-      Assets::EntityDefinitionType::PointEntity, m_sortOrder);
-    addEntitiesToLayout(layout, definitions, font);
   }
 }
 

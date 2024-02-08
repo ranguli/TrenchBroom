@@ -57,7 +57,6 @@ class TextureBrowser : public QWidget
 private:
   std::weak_ptr<MapDocument> m_document;
   QComboBox* m_sortOrderChoice = nullptr;
-  QPushButton* m_groupButton = nullptr;
   QPushButton* m_usedButton = nullptr;
   QLineEdit* m_filterBox = nullptr;
   QScrollBar* m_scrollBar = nullptr;
@@ -76,7 +75,6 @@ public:
   void revealTexture(const Assets::Texture* texture);
 
   void setSortOrder(TextureSortOrder sortOrder);
-  void setGroup(bool group);
   void setHideUnused(bool hideUnused);
   void setFilterText(const std::string& filterText);
 signals:

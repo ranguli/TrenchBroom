@@ -364,33 +364,6 @@ LayoutGroup::LayoutGroup(
 {
 }
 
-LayoutGroup::LayoutGroup(
-  const float x,
-  const float y,
-  const float cellMargin,
-  const float titleMargin,
-  const float rowMargin,
-  const float width,
-  const size_t maxCellsPerRow,
-  const float maxUpScale,
-  const float minCellWidth,
-  const float maxCellWidth,
-  const float minCellHeight,
-  const float maxCellHeight)
-  : m_cellMargin{cellMargin}
-  , m_titleMargin{titleMargin}
-  , m_rowMargin{rowMargin}
-  , m_maxCellsPerRow{maxCellsPerRow}
-  , m_maxUpScale{maxUpScale}
-  , m_minCellWidth{minCellWidth}
-  , m_maxCellWidth{maxCellWidth}
-  , m_minCellHeight{minCellHeight}
-  , m_maxCellHeight{maxCellHeight}
-  , m_titleBounds{x, y, width, 0.0f}
-  , m_contentBounds{x, y, width, 0.0f}
-{
-}
-
 const std::string& LayoutGroup::item() const
 {
   return m_item;
@@ -859,31 +832,11 @@ void CellLayout::addItem(
   const float titleWidth,
   const float titleHeight)
 {
+  ensure(!m_groups.empty(), "More than one group");
+
   if (!m_valid)
   {
     validate();
-  }
-
-  if (m_groups.empty())
-  {
-    m_groups.emplace_back(
-      m_outerMargin,
-      m_outerMargin,
-      m_cellMargin,
-      m_titleMargin,
-      m_rowMargin,
-      m_width - 2.0f * m_outerMargin,
-      m_maxCellsPerRow,
-      m_maxUpScale,
-      m_minCellWidth,
-      m_maxCellWidth,
-      m_minCellHeight,
-      m_maxCellHeight);
-    m_height += titleHeight;
-    if (titleHeight > 0.0f)
-    {
-      m_height += m_rowMargin;
-    }
   }
 
   const auto oldGroupHeight = m_groups.back().bounds().height;

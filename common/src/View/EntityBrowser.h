@@ -49,7 +49,6 @@ class EntityBrowser : public QWidget
 private:
   std::weak_ptr<MapDocument> m_document;
   QComboBox* m_sortOrderChoice = nullptr;
-  QPushButton* m_groupButton = nullptr;
   QPushButton* m_usedButton = nullptr;
   QLineEdit* m_filterBox = nullptr;
   QScrollBar* m_scrollBar = nullptr;

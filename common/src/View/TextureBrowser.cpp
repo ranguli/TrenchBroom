@@ -85,12 +85,6 @@ void TextureBrowser::setSortOrder(const TextureSortOrder sortOrder)
   }
 }
 
-void TextureBrowser::setGroup(const bool group)
-{
-  m_view->setGroup(group);
-  m_groupButton->setChecked(group);
-}
-
 void TextureBrowser::setHideUnused(const bool hideUnused)
 {
   m_view->setHideUnused(hideUnused);
@@ -133,13 +127,6 @@ void TextureBrowser::createGui(GLContextManager& contextManager)
       m_view->setSortOrder(sortOrder);
     });
 
-  m_groupButton = new QPushButton{tr("Group")};
-  m_groupButton->setToolTip(tr("Group textures by texture collection"));
-  m_groupButton->setCheckable(true);
-  connect(m_groupButton, &QAbstractButton::clicked, this, [=]() {
-    m_view->setGroup(m_groupButton->isChecked());
-  });
-
   m_usedButton = new QPushButton{tr("Used")};
   m_usedButton->setToolTip(tr("Only show textures currently in use"));
   m_usedButton->setCheckable(true);
@@ -160,7 +147,6 @@ void TextureBrowser::createGui(GLContextManager& contextManager)
     LayoutConstants::NarrowVMargin);
   controlSizer->setSpacing(LayoutConstants::NarrowHMargin);
   controlSizer->addWidget(m_sortOrderChoice);
-  controlSizer->addWidget(m_groupButton);
   controlSizer->addWidget(m_usedButton);
   controlSizer->addWidget(m_filterBox, 1);
 

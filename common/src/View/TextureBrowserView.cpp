@@ -81,16 +81,6 @@ void TextureBrowserView::setSortOrder(const TextureSortOrder sortOrder)
   }
 }
 
-void TextureBrowserView::setGroup(const bool group)
-{
-  if (group != m_group)
-  {
-    m_group = group;
-    invalidate();
-    update();
-  }
-}
-
 void TextureBrowserView::setHideUnused(const bool hideUnused)
 {
   if (hideUnused != m_hideUnused)
@@ -160,17 +150,10 @@ void TextureBrowserView::doReloadLayout(Layout& layout)
 
   const auto font = Renderer::FontDescriptor{fontPath, static_cast<size_t>(fontSize)};
 
-  if (m_group)
+  for (const auto& collection : getCollections())
   {
-    for (const auto& collection : getCollections())
-    {
-      layout.addGroup(collection.name(), static_cast<float>(fontSize) + 2.0f);
-      addTexturesToLayout(layout, getTextures(collection), collection.name(), font);
-    }
-  }
-  else
-  {
-    addTexturesToLayout(layout, getTextures(), "", font);
+    layout.addGroup(collection.name(), static_cast<float>(fontSize) + 2.0f);
+    addTexturesToLayout(layout, getTextures(collection), collection.name(), font);
   }
 }
 
