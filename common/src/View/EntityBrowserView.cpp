@@ -147,9 +147,7 @@ void EntityBrowserView::doReloadLayout(Layout& layout)
 
     if (!definitions.empty())
     {
-      const auto displayName = group.displayName();
-      layout.addGroup(displayName, static_cast<float>(fontSize) + 2.0f);
-
+      layout.addGroup(&group, static_cast<float>(fontSize) + 2.0f);
       addEntitiesToLayout(layout, definitions, font);
     }
   }
@@ -471,7 +469,9 @@ EntityBrowserView::StringMap EntityBrowserView::collectStringVertices(
   {
     if (group.intersectsY(y, height))
     {
-      const auto& title = group.item();
+      const auto& entityDefinitionGroup =
+        *group.itemAs<const Assets::EntityDefinitionGroup*>();
+      const auto& title = entityDefinitionGroup.displayName();
       if (!title.empty())
       {
         const auto titleBounds = layout.titleBoundsForVisibleRect(group, y, height);

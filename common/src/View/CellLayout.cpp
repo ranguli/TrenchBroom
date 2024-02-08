@@ -335,7 +335,7 @@ void LayoutRow::readjustItems()
 }
 
 LayoutGroup::LayoutGroup(
-  std::string item,
+  std::any item,
   const float x,
   const float y,
   const float cellMargin,
@@ -364,9 +364,14 @@ LayoutGroup::LayoutGroup(
 {
 }
 
-const std::string& LayoutGroup::item() const
+const std::any& LayoutGroup::item() const
 {
   return m_item;
+}
+
+void LayoutGroup::setItem(std::any item)
+{
+  m_item = std::move(item);
 }
 
 const LayoutBounds& LayoutGroup::titleBounds() const
@@ -793,7 +798,7 @@ const LayoutCell* CellLayout::cellAt(const float x, const float y)
   return nullptr;
 }
 
-void CellLayout::addGroup(std::string groupItem, const float titleHeight)
+void CellLayout::addGroup(std::any groupItem, const float titleHeight)
 {
   if (!m_valid)
   {

@@ -160,7 +160,7 @@ private:
 class LayoutGroup
 {
 private:
-  std::string m_item;
+  std::any m_item;
   float m_cellMargin;
   float m_titleMargin;
   float m_rowMargin;
@@ -177,7 +177,7 @@ private:
 
 public:
   LayoutGroup(
-    std::string item,
+    std::any item,
     float x,
     float y,
     float cellMargin,
@@ -192,7 +192,18 @@ public:
     float minCellHeight,
     float maxCellHeight);
 
-  const std::string& item() const;
+  const std::any& item() const;
+  void setItem(std::any item);
+
+  template <typename T>
+  const T& itemAs() const
+  {
+    if (const auto* result = std::any_cast<T>(&m_item))
+    {
+      return *result;
+    }
+    throw std::bad_any_cast{};
+  }
 
   const LayoutBounds& titleBounds() const;
   LayoutBounds titleBoundsForVisibleRect(float y, float height, float groupMargin) const;
@@ -277,7 +288,7 @@ public:
   const std::vector<LayoutGroup>& groups();
   const LayoutCell* cellAt(float x, float y);
 
-  void addGroup(std::string groupItem, float titleHeight);
+  void addGroup(std::any groupItem, float titleHeight);
   void addItem(
     std::any item,
     float itemWidth,

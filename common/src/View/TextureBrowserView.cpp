@@ -152,7 +152,7 @@ void TextureBrowserView::doReloadLayout(Layout& layout)
 
   for (const auto& collection : getCollections())
   {
-    layout.addGroup(collection.name(), static_cast<float>(fontSize) + 2.0f);
+    layout.addGroup(&collection, static_cast<float>(fontSize) + 2.0f);
     addTexturesToLayout(layout, getTextures(collection), collection.name(), font);
   }
 }
@@ -485,7 +485,8 @@ TextureBrowserView::StringMap TextureBrowserView::collectStringVertices(
   {
     if (group.intersectsY(y, height))
     {
-      const auto& title = group.item();
+      const auto& textureCollection = *group.itemAs<const Assets::TextureCollection*>();
+      const auto& title = textureCollection.name();
       if (!title.empty())
       {
         const auto titleBounds = layout.titleBoundsForVisibleRect(group, y, height);
