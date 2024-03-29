@@ -64,6 +64,8 @@ TextureBrowserView::TextureBrowserView(
   auto document = kdl::mem_lock(m_document);
   m_notifierConnection += document->textureUsageCountsDidChangeNotifier.connect(
     this, &TextureBrowserView::reloadTextures);
+  m_notifierConnection += document->resourcesWereProcessedNotifier.connect(
+    this, &TextureBrowserView::reloadTextures);
 }
 
 TextureBrowserView::~TextureBrowserView()

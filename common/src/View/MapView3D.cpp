@@ -578,6 +578,11 @@ void MapView3D::doRenderMap(
     guideRenderer->setBounds(bounds);
     renderBatch.addOneShot(guideRenderer);
   }
+
+  if (document->needsResourceProcessing())
+  {
+    update();
+  }
 }
 
 void MapView3D::doRenderTools(

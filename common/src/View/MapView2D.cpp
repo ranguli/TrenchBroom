@@ -410,6 +410,11 @@ void MapView2D::doRenderMap(
     Renderer::SelectionBoundsRenderer boundsRenderer(bounds);
     boundsRenderer.render(renderContext, renderBatch);
   }
+
+  if (document->needsResourceProcessing())
+  {
+    update();
+  }
 }
 
 void MapView2D::doRenderTools(

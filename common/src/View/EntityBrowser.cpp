@@ -54,9 +54,9 @@ EntityBrowser::EntityBrowser(
 
 void EntityBrowser::reload()
 {
-  if (m_view)
+  auto document = kdl::mem_lock(m_document);
+  if (m_view && document->world())
   {
-    auto document = kdl::mem_lock(m_document);
     m_view->setDefaultModelScaleExpression(
       document->world()->entityPropertyConfig().defaultModelScaleExpression);
 
@@ -154,6 +154,8 @@ void EntityBrowser::connectObservers()
     this, &EntityBrowser::entityDefinitionsDidChange);
   m_notifierConnection +=
     document->nodesDidChangeNotifier.connect(this, &EntityBrowser::nodesDidChange);
+  m_notifierConnection +=
+    document->resourcesWereProcessedNotifier.connect(this, &EntityBrowser::reload);
 
   auto& prefs = PreferenceManager::instance();
   m_notifierConnection +=

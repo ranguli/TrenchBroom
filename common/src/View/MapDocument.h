@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "Assets/AsyncResourceManager.h"
 #include "FloatType.h"
 #include "Model/Game.h"
 #include "Model/MapFacade.h"
@@ -92,6 +93,7 @@ class UndoableCommand;
 class ViewEffectsService;
 enum class MapTextEncoding;
 enum class TransactionScope;
+class AsyncTaskRunner;
 
 struct PointFile
 {
@@ -122,6 +124,7 @@ protected:
   std::unique_ptr<Assets::EntityDefinitionManager> m_entityDefinitionManager;
   std::unique_ptr<Assets::EntityModelManager> m_entityModelManager;
   std::unique_ptr<Assets::TextureManager> m_textureManager;
+  std::unique_ptr<Assets::AsyncResourceManager> m_resourceManager;
   std::unique_ptr<Model::TagManager> m_tagManager;
 
   std::unique_ptr<Model::EditorContext> m_editorContext;
@@ -192,6 +195,8 @@ public: // notification
   Notifier<Model::GroupNode*> groupWasClosedNotifier;
 
   Notifier<const std::vector<Model::BrushFaceHandle>&> brushFacesDidChangeNotifier;
+
+  Notifier<> resourcesWereProcessedNotifier;
 
   Notifier<> textureCollectionsWillChangeNotifier;
   Notifier<> textureCollectionsDidChangeNotifier;
@@ -679,6 +684,8 @@ private: // subclassing interface for command processing
 
 public: // asset state management
   void commitPendingAssets();
+  void processResources();
+  bool needsResourceProcessing();
 
 public: // picking
   void pick(const vm::ray3& pickRay, Model::PickResult& pickResult) const;

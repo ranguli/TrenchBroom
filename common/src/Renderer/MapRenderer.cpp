@@ -256,6 +256,7 @@ void MapRenderer::commitPendingChanges()
 {
   auto document = kdl::mem_lock(m_document);
   document->commitPendingAssets();
+  document->processResources();
 }
 
 class SetupGL : public Renderable
