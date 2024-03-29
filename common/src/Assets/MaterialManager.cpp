@@ -21,6 +21,8 @@
 
 #include "Assets/Material.h"
 #include "Assets/MaterialCollection.h"
+#include "Assets/Resource.h"
+#include "Assets/Texture.h"
 #include "Error.h"
 #include "Exceptions.h"
 #include "IO/LoadMaterialCollection.h"
@@ -169,6 +171,16 @@ const Material* MaterialManager::material(const std::string& name) const
 Material* MaterialManager::material(const std::string& name)
 {
   return const_cast<Material*>(const_cast<const MaterialManager*>(this)->material(name));
+}
+
+const std::vector<const Material*> MaterialManager::findMaterialsByTextureResourceId(
+  const std::vector<ResourceId>& textureResourceIds) const
+{
+  const auto resourceIdSet =
+    std::unordered_set<ResourceId>{textureResourceIds.begin(), textureResourceIds.end()};
+  return kdl::vec_filter(m_materials, [&](const auto* material) {
+    return resourceIdSet.count(material->textureResource().id()) > 0;
+  });
 }
 
 const std::vector<const Material*>& MaterialManager::materials() const
