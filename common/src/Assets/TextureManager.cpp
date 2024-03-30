@@ -55,13 +55,13 @@ void TextureManager::reload(
   const IO::FileSystem& fs, const Model::TextureConfig& textureConfig)
 {
   findTextureCollections(fs, textureConfig)
-    .transform([&](auto textureCollections) {
-      setTextureCollections(std::move(textureCollections), fs, textureConfig);
-    })
-    .transform_error([&](auto e) {
-      m_logger.error() << "Could not reload texture collections: " + e.msg;
-      setTextureCollections({}, fs, textureConfig);
-    });
+    | kdl::transform([&](auto textureCollections) {
+        setTextureCollections(std::move(textureCollections), fs, textureConfig);
+      })
+    | kdl::transform_error([&](auto e) {
+        m_logger.error() << "Could not reload texture collections: " + e.msg;
+        setTextureCollections({}, fs, textureConfig);
+      });
 }
 
 void TextureManager::setTextureCollections(std::vector<TextureCollection> collections)
@@ -91,21 +91,21 @@ void TextureManager::setTextureCollections(
     if (it == collections.end() || !it->loaded())
     {
       IO::loadTextureCollection(path, fs, textureConfig, m_logger)
-        .transform_error([&](const auto& error) {
-          if (it == collections.end())
-          {
-            m_logger.error() << "Could not load texture collection '" << path
-                             << "': " << error.msg;
-          }
-          return Assets::TextureCollection{path};
-        })
-        .transform([&](auto collection) {
-          if (!collection.textures().empty())
-          {
-            m_logger.info() << "Loaded texture collection '" << path << "'";
-          }
-          addTextureCollection(std::move(collection));
-        });
+        | kdl::transform_error([&](const auto& error) {
+            if (it == collections.end())
+            {
+              m_logger.error() << "Could not load texture collection '" << path
+                               << "': " << error.msg;
+            }
+            return Assets::TextureCollection{path};
+          })
+        | kdl::transform([&](auto collection) {
+            if (!collection.textures().empty())
+            {
+              m_logger.info() << "Loaded texture collection '" << path << "'";
+            }
+            addTextureCollection(std::move(collection));
+          });
     }
     else
     {
