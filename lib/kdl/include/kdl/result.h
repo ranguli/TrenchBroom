@@ -929,18 +929,12 @@ public:
   /**
    * Indicates whether the given result contains a value.
    */
-  bool is_success() const
-  {
-    return m_value.index() == 0u;
-  }
+  bool is_success() const { return m_value.index() == 0u; }
 
   /**
    * Indicates whether the given result contains an error.
    */
-  bool is_error() const
-  {
-    return !is_success();
-  }
+  bool is_error() const { return !is_success(); }
 
   /**
    * Indicates whether the given result contains the given type of error.
@@ -958,10 +952,7 @@ public:
     return lhs.m_value == rhs.m_value;
   }
 
-  friend bool operator!=(const result& lhs, const result& rhs)
-  {
-    return !(lhs == rhs);
-  }
+  friend bool operator!=(const result& lhs, const result& rhs) { return !(lhs == rhs); }
 };
 
 template <typename... Values, typename... Errors>
@@ -1543,18 +1534,12 @@ public:
   /**
    * Indicates whether the given result contains a value.
    */
-  bool is_success() const
-  {
-    return m_value.index() == 0u;
-  }
+  bool is_success() const { return m_value.index() == 0u; }
 
   /**
    * Indicates whether the given result contains an error.
    */
-  bool is_error() const
-  {
-    return !is_success();
-  }
+  bool is_error() const { return !is_success(); }
 
   /**
    * Indicates whether the given result contains the given type of error.
@@ -1572,10 +1557,7 @@ public:
     return lhs.m_value == rhs.m_value;
   }
 
-  friend bool operator!=(const result& lhs, const result& rhs)
-  {
-    return !(lhs == rhs);
-  }
+  friend bool operator!=(const result& lhs, const result& rhs) { return !(lhs == rhs); }
 };
 
 namespace detail
@@ -2145,10 +2127,7 @@ public:
   /**
    * Indicates whether this result contains an error.
    */
-  bool is_error() const
-  {
-    return !is_success();
-  }
+  bool is_error() const { return !is_success(); }
 
   /**
    * Indicates whether the given result contains the given type of error.
@@ -2166,9 +2145,102 @@ public:
     return lhs.m_value == rhs.m_value;
   }
 
-  friend bool operator!=(const result& lhs, const result& rhs)
-  {
-    return !(lhs == rhs);
-  }
+  friend bool operator!=(const result& lhs, const result& rhs) { return !(lhs == rhs); }
 };
+
+template <typename R>
+struct result_join
+{
+  R join;
+};
+
+template <typename R>
+auto join(R r)
+{
+  return result_join<R>{std::move(r)};
+}
+
+template <typename R1, typename R2>
+auto operator|(R1&& r1, result_join<R2> r2)
+{
+  static_assert(is_result_v<std::decay_t<R1>>, "Can only pipe a result type");
+  return std::forward<R1>(r1).join(std::move(r2.join));
+}
+
+template <typename F>
+struct result_and_then
+{
+  F and_then;
+};
+
+template <typename F>
+auto and_then(F f)
+{
+  return result_and_then<F>{std::move(f)};
+}
+
+template <typename R, typename F>
+auto operator|(R&& r, const result_and_then<F>& t)
+{
+  static_assert(is_result_v<std::decay_t<R>>, "Can only pipe a result type");
+  return std::forward<R>(r).and_then(t.and_then);
+}
+
+template <typename F>
+struct result_or_else
+{
+  F or_else;
+};
+
+template <typename F>
+auto or_else(F f)
+{
+  return result_or_else<F>{std::move(f)};
+}
+
+template <typename R, typename F>
+auto operator|(R&& r, const result_or_else<F>& t)
+{
+  static_assert(is_result_v<std::decay_t<R>>, "Can only pipe a result type");
+  return std::forward<R>(r).or_else(t.or_else);
+}
+
+template <typename F>
+struct result_transform
+{
+  F transform;
+};
+
+template <typename F>
+auto transform(F f)
+{
+  return result_transform<F>{std::move(f)};
+}
+
+template <typename R, typename F>
+auto operator|(R&& r, const result_transform<F>& t)
+{
+  static_assert(is_result_v<std::decay_t<R>>, "Can only pipe a result type");
+  return std::forward<R>(r).transform(t.transform);
+}
+
+template <typename F>
+struct result_transform_error
+{
+  F transform_error;
+};
+
+template <typename F>
+auto transform_error(F f)
+{
+  return result_transform_error<F>{std::move(f)};
+}
+
+template <typename R, typename F>
+auto operator|(R&& r, const result_transform_error<F>& t)
+{
+  static_assert(is_result_v<std::decay_t<R>>, "Can only pipe a result type");
+  return std::forward<R>(r).transform_error(t.transform_error);
+}
+
 } // namespace kdl
