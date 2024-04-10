@@ -76,7 +76,7 @@ bool Md3Parser::canParse(const std::filesystem::path& path, Reader reader)
   return ident == Md3Layout::Ident && version == Md3Layout::Version;
 }
 
-std::unique_ptr<Assets::EntityModel> Md3Parser::doInitializeModel(Logger& logger)
+std::unique_ptr<Assets::EntityModel> Md3Parser::initializeModel(Logger& logger)
 {
   auto reader = m_reader;
 
@@ -116,7 +116,7 @@ std::unique_ptr<Assets::EntityModel> Md3Parser::doInitializeModel(Logger& logger
   return model;
 }
 
-void Md3Parser::doLoadFrame(
+void Md3Parser::loadFrame(
   const size_t frameIndex, Assets::EntityModel& model, Logger& /* logger */)
 {
   auto reader = m_reader;

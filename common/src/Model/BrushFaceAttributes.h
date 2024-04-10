@@ -59,10 +59,7 @@ private:
 
 public:
   explicit BrushFaceAttributes(std::string_view textureName);
-  BrushFaceAttributes(const BrushFaceAttributes& other);
   BrushFaceAttributes(std::string_view textureName, const BrushFaceAttributes& other);
-
-  BrushFaceAttributes& operator=(BrushFaceAttributes other);
 
   kdl_reflect_decl(
     BrushFaceAttributes,
@@ -74,8 +71,6 @@ public:
     m_surfaceFlags,
     m_surfaceValue,
     m_color);
-
-  friend void swap(BrushFaceAttributes& lhs, BrushFaceAttributes& rhs);
 
   const std::string& textureName() const;
 

@@ -262,7 +262,7 @@ bool DkmParser::canParse(const std::filesystem::path& path, Reader reader)
 }
 
 // http://tfc.duke.free.fr/old/models/md2.htm
-std::unique_ptr<Assets::EntityModel> DkmParser::doInitializeModel(Logger& logger)
+std::unique_ptr<Assets::EntityModel> DkmParser::initializeModel(Logger& logger)
 {
   auto reader = m_reader;
 
@@ -307,7 +307,7 @@ std::unique_ptr<Assets::EntityModel> DkmParser::doInitializeModel(Logger& logger
   return model;
 }
 
-void DkmParser::doLoadFrame(
+void DkmParser::loadFrame(
   size_t frameIndex, Assets::EntityModel& model, Logger& /* logger */)
 {
   auto reader = m_reader;

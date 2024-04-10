@@ -96,7 +96,7 @@ bool Bsp29Parser::canParse(const std::filesystem::path& path, Reader reader)
   return version == 29;
 }
 
-std::unique_ptr<Assets::EntityModel> Bsp29Parser::doInitializeModel(Logger& logger)
+std::unique_ptr<Assets::EntityModel> Bsp29Parser::initializeModel(Logger& logger)
 {
   auto reader = m_reader;
   const auto version = reader.readInt<int32_t>();
@@ -128,7 +128,7 @@ std::unique_ptr<Assets::EntityModel> Bsp29Parser::doInitializeModel(Logger& logg
   return model;
 }
 
-void Bsp29Parser::doLoadFrame(
+void Bsp29Parser::loadFrame(
   const size_t frameIndex, Assets::EntityModel& model, Logger& /* logger */)
 {
   auto reader = m_reader;

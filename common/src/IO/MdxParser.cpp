@@ -252,7 +252,7 @@ bool MdxParser::canParse(const std::filesystem::path& path, Reader reader)
 }
 
 // http://tfc.duke.free.fr/old/models/md2.htm
-std::unique_ptr<Assets::EntityModel> MdxParser::doInitializeModel(Logger& logger)
+std::unique_ptr<Assets::EntityModel> MdxParser::initializeModel(Logger& logger)
 {
   auto reader = m_reader;
   const int ident = reader.readInt<int32_t>();
@@ -298,7 +298,7 @@ std::unique_ptr<Assets::EntityModel> MdxParser::doInitializeModel(Logger& logger
   return model;
 }
 
-void MdxParser::doLoadFrame(
+void MdxParser::loadFrame(
   size_t frameIndex, Assets::EntityModel& model, Logger& /* logger */)
 {
   auto reader = m_reader;

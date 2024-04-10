@@ -233,7 +233,7 @@ static Assets::Palette parseEmbeddedPalette(Reader& reader, const RenderMode ren
     .value();
 }
 
-std::unique_ptr<Assets::EntityModel> SprParser::doInitializeModel(Logger& /* logger */)
+std::unique_ptr<Assets::EntityModel> SprParser::initializeModel(Logger& /* logger */)
 {
   // see https://www.gamers.org/dEngine/quake/spec/quake-spec34/qkspec_6.htm#CSPRF
 
@@ -332,10 +332,10 @@ std::unique_ptr<Assets::EntityModel> SprParser::doInitializeModel(Logger& /* log
   return model;
 }
 
-void SprParser::doLoadFrame(
+void SprParser::loadFrame(
   const size_t /* frameIndex */, Assets::EntityModel& /* model */, Logger& /* logger */)
 {
-  // already loaded everything in doInitializeModel
+  // already loaded everything in initializeModel
 }
 } // namespace IO
 } // namespace TrenchBroom

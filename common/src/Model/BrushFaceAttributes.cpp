@@ -42,18 +42,6 @@ BrushFaceAttributes::BrushFaceAttributes(std::string_view textureName)
 {
 }
 
-BrushFaceAttributes::BrushFaceAttributes(const BrushFaceAttributes& other)
-  : m_textureName(other.m_textureName)
-  , m_offset(other.m_offset)
-  , m_scale(other.m_scale)
-  , m_rotation(other.m_rotation)
-  , m_surfaceContents(other.m_surfaceContents)
-  , m_surfaceFlags(other.m_surfaceFlags)
-  , m_surfaceValue(other.m_surfaceValue)
-  , m_color(other.m_color)
-{
-}
-
 BrushFaceAttributes::BrushFaceAttributes(
   std::string_view textureName, const BrushFaceAttributes& other)
   : m_textureName(textureName)
@@ -67,27 +55,7 @@ BrushFaceAttributes::BrushFaceAttributes(
 {
 }
 
-BrushFaceAttributes& BrushFaceAttributes::operator=(BrushFaceAttributes other)
-{
-  using std::swap;
-  swap(*this, other);
-  return *this;
-}
-
 kdl_reflect_impl(BrushFaceAttributes);
-
-void swap(BrushFaceAttributes& lhs, BrushFaceAttributes& rhs)
-{
-  using std::swap;
-  swap(lhs.m_textureName, rhs.m_textureName);
-  swap(lhs.m_offset, rhs.m_offset);
-  swap(lhs.m_scale, rhs.m_scale);
-  swap(lhs.m_rotation, rhs.m_rotation);
-  swap(lhs.m_surfaceContents, rhs.m_surfaceContents);
-  swap(lhs.m_surfaceFlags, rhs.m_surfaceFlags);
-  swap(lhs.m_surfaceValue, rhs.m_surfaceValue);
-  swap(lhs.m_color, rhs.m_color);
-}
 
 const std::string& BrushFaceAttributes::textureName() const
 {

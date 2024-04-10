@@ -113,11 +113,10 @@ public:
 
   static bool canParse(const std::filesystem::path& path, Reader reader);
 
-private:
-  std::unique_ptr<Assets::EntityModel> doInitializeModel(Logger& logger) override;
-  void doLoadFrame(
-    size_t frameIndex, Assets::EntityModel& model, Logger& logger) override;
+  std::unique_ptr<Assets::EntityModel> initializeModel(Logger& logger) override;
+  void loadFrame(size_t frameIndex, Assets::EntityModel& model, Logger& logger) override;
 
+private:
   Md2SkinList parseSkins(Reader reader, size_t skinCount);
   Md2Frame parseFrame(Reader reader, size_t frameIndex, size_t vertexCount);
   Md2MeshList parseMeshes(Reader reader, size_t commandCount);

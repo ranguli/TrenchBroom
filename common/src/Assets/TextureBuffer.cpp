@@ -26,22 +26,17 @@
 #include <FreeImage.h>
 #include <algorithm> // for std::max
 
-namespace TrenchBroom
+namespace TrenchBroom::Assets
 {
-namespace Assets
-{
-TextureBuffer::TextureBuffer()
-  : m_buffer()
-  , m_size(0)
-{
-}
+
+TextureBuffer::TextureBuffer() = default;
 
 /**
  * Note, buffer is created defult-initialized (i.e., uninitialized) on purpose.
  */
 TextureBuffer::TextureBuffer(const size_t size)
-  : m_buffer(new unsigned char[size])
-  , m_size(size)
+  : m_buffer{new unsigned char[size]}
+  , m_size{size}
 {
 }
 
@@ -58,6 +53,12 @@ unsigned char* TextureBuffer::data()
 size_t TextureBuffer::size() const
 {
   return m_size;
+}
+
+std::ostream& operator<<(std::ostream& lhs, const TextureBuffer& rhs)
+{
+  lhs << "TextureBuffer{" << rhs.size() << " bytes}";
+  return lhs;
 }
 
 vm::vec2s sizeAtMipLevel(const size_t width, const size_t height, const size_t level)
@@ -162,5 +163,4 @@ void resizeMips(
     FreeImage_Unload(newBitmap);
   }
 }
-} // namespace Assets
-} // namespace TrenchBroom
+} // namespace TrenchBroom::Assets
