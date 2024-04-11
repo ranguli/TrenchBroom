@@ -595,7 +595,7 @@ void MapViewBase::resetTextures()
   auto request = Model::ChangeBrushFaceAttributesRequest{};
 
   auto document = kdl::mem_lock(m_document);
-  request.resetAll(document->game()->defaultFaceAttribs());
+  request.resetAll(document->game()->config().faceAttribsConfig.defaults);
   document->setFaceAttributes(request);
 }
 
@@ -604,7 +604,7 @@ void MapViewBase::resetTexturesToWorld()
   auto request = Model::ChangeBrushFaceAttributesRequest{};
 
   auto document = kdl::mem_lock(m_document);
-  request.resetAllToParaxial(document->game()->defaultFaceAttribs());
+  request.resetAllToParaxial(document->game()->config().faceAttribsConfig.defaults);
   document->setFaceAttributes(request);
 }
 

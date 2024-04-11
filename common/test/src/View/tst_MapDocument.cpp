@@ -92,7 +92,9 @@ Model::BrushNode* MapDocumentTest::createBrushNode(
 {
   const Model::WorldNode* world = document->world();
   Model::BrushBuilder builder(
-    world->mapFormat(), document->worldBounds(), document->game()->defaultFaceAttribs());
+    world->mapFormat(),
+    document->worldBounds(),
+    document->game()->config().faceAttribsConfig.defaults);
   Model::Brush brush = builder.createCube(32.0, textureName).value();
   brushFunc(brush);
   return new Model::BrushNode(std::move(brush));

@@ -562,7 +562,7 @@ static QString describeSelection(const MapDocument* document)
 
   QStringList pipeSeparatedSections;
 
-  pipeSeparatedSections << QString::fromStdString(document->game()->gameName())
+  pipeSeparatedSections << QString::fromStdString(document->game()->config().name)
                         << QString::fromStdString(
                              Model::formatName(document->world()->mapFormat()))
                         << QString::fromStdString(document->currentLayer()->name());
@@ -2397,7 +2397,7 @@ bool MapFrame::canLaunch() const
 void MapFrame::dragEnterEvent(QDragEnterEvent* event)
 {
   if (
-    m_document->game()->wadProperty() && event->mimeData()->hasUrls()
+    m_document->game()->config().textureConfig.property && event->mimeData()->hasUrls()
     && kdl::all_of(event->mimeData()->urls(), [](const auto& url) {
          if (!url.isLocalFile())
          {
@@ -2420,7 +2420,7 @@ void MapFrame::dropEvent(QDropEvent* event)
     return;
   }
 
-  const auto& wadPropertyKey = m_document->game()->wadProperty();
+  const auto& wadPropertyKey = m_document->game()->config().textureConfig.property;
   if (!wadPropertyKey)
   {
     return;

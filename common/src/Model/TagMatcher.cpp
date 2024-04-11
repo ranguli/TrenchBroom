@@ -355,8 +355,9 @@ ContentFlagsTagMatcher::ContentFlagsTagMatcher(const int i_flags)
     [](ChangeBrushFaceAttributesRequest& request, const int flags) {
       request.unsetContentFlags(flags);
     },
-    [](
-      const Game& game, const int flags) { return game.contentFlags().flagNames(flags); })
+    [](const Game& game, const int flags) {
+      return game.config().faceAttribsConfig.contentFlags.flagNames(flags);
+    })
 {
 }
 
@@ -375,8 +376,9 @@ SurfaceFlagsTagMatcher::SurfaceFlagsTagMatcher(const int i_flags)
     [](ChangeBrushFaceAttributesRequest& request, const int flags) {
       request.unsetSurfaceFlags(flags);
     },
-    [](
-      const Game& game, const int flags) { return game.surfaceFlags().flagNames(flags); })
+    [](const Game& game, const int flags) {
+      return game.config().faceAttribsConfig.surfaceFlags.flagNames(flags);
+    })
 {
 }
 

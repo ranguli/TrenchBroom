@@ -181,7 +181,6 @@ void UVEditor::resetTextureClicked()
   Model::ChangeBrushFaceAttributesRequest request;
 
   auto document = kdl::mem_lock(m_document);
-  request.resetAll(document->game()->defaultFaceAttribs());
   document->setFaceAttributes(request);
 }
 
@@ -190,7 +189,7 @@ void UVEditor::resetTextureToWorldClicked()
   Model::ChangeBrushFaceAttributesRequest request;
 
   auto document = kdl::mem_lock(m_document);
-  request.resetAllToParaxial(document->game()->defaultFaceAttribs());
+  request.resetAllToParaxial(document->game()->config().faceAttribsConfig.defaults);
   document->setFaceAttributes(request);
 }
 
