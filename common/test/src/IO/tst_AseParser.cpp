@@ -141,8 +141,8 @@ TEST_CASE("AseParserTest.loadDefaultMaterial")
 
   const auto* texture = model->surface(0).skin(0);
   CHECK(texture->name() == "textures/bigtile");
-  CHECK(texture->width() == 32u);
-  CHECK(texture->height() == 32u);
+  CHECK(texture->image().width() == 32u);
+  CHECK(texture->image().height() == 32u);
 }
 } // namespace IO
 } // namespace TrenchBroom

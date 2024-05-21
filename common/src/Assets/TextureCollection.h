@@ -39,8 +39,8 @@ private:
   std::filesystem::path m_path;
   std::vector<Texture> m_textures;
 
-  bool m_loaded{false};
-  TextureIdList m_textureIds;
+  bool m_loaded = false;
+  bool m_prepared = false;
 
   friend class Texture;
 
@@ -57,8 +57,6 @@ public:
 
   TextureCollection(TextureCollection&& other) = default;
   TextureCollection& operator=(TextureCollection&& other) = default;
-
-  ~TextureCollection();
 
   bool loaded() const;
   const std::filesystem::path& path() const;

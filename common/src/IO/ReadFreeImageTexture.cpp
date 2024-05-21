@@ -164,17 +164,18 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
       FI_RGBA_BLUE_MASK,
       TRUE);
 
-    const auto textureType = Assets::Texture::selectTextureType(masked);
+    const auto textureMask = masked ? Assets::TextureMask::On : Assets::TextureMask::Off;
     const auto averageColor = getAverageColor(buffers.at(0), format);
 
-    return Assets::Texture{
-      std::move(name),
+    auto textureImage = Assets::TextureImage{
       imageWidth,
       imageHeight,
       averageColor,
-      std::move(buffers),
       format,
-      textureType};
+      textureMask,
+      Assets::NoEmbeddedDefaults{},
+      std::move(buffers)};
+    return Assets::Texture{std::move(name), std::move(textureImage)};
   }
   catch (const std::exception& e)
   {

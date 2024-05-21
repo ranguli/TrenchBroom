@@ -92,8 +92,10 @@ vm::vec2 UVViewHelper::stripeSize() const
 
   if (const auto* texture = face()->texture())
   {
-    const auto width = FloatType(texture->width()) / FloatType(m_subDivisions.x());
-    const auto height = FloatType(texture->height()) / FloatType(m_subDivisions.y());
+    const auto width =
+      FloatType(texture->image().width()) / FloatType(m_subDivisions.x());
+    const auto height =
+      FloatType(texture->image().height()) / FloatType(m_subDivisions.y());
     return vm::vec2{width, height};
   }
 

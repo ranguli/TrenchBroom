@@ -59,7 +59,7 @@ public:
     {
       texture->activate();
       m_shader.set("ApplyTexture", m_applyTexture);
-      m_shader.set("Color", texture->averageColor());
+      m_shader.set("Color", texture->image().averageColor());
     }
     else
     {
@@ -173,7 +173,8 @@ void FaceRenderer::doRender(RenderContext& context)
     {
       if (brushIndexHolderPtr->hasValidIndices())
       {
-        const auto enableMasked = texture && texture->masked();
+        const auto enableMasked =
+          texture && texture->image().mask() == Assets::TextureMask::On;
 
         // set any per-texture uniforms
         shader.set("GridColor", gridColorForTexture(texture));

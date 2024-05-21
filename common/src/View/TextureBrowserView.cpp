@@ -192,8 +192,10 @@ void TextureBrowserView::addTextureToLayout(
   const auto titleHeight = fontManager().font(font).measure(textureName).y();
 
   const auto scaleFactor = pref(Preferences::TextureBrowserIconSize);
-  const auto scaledTextureWidth = vm::round(scaleFactor * float(texture->width()));
-  const auto scaledTextureHeight = vm::round(scaleFactor * float(texture->height()));
+  const auto scaledTextureWidth =
+    vm::round(scaleFactor * float(texture->image().width()));
+  const auto scaledTextureHeight =
+    vm::round(scaleFactor * float(texture->image().height()));
 
   layout.addItem(
     texture,
@@ -432,7 +434,7 @@ QString TextureBrowserView::tooltip(const Cell& cell)
   auto tooltip = QString{};
   auto ss = QTextStream{&tooltip};
   ss << QString::fromStdString(cellData(cell).name()) << "\n";
-  ss << cellData(cell).width() << "x" << cellData(cell).height();
+  ss << cellData(cell).image().width() << "x" << cellData(cell).image().height();
   return tooltip;
 }
 

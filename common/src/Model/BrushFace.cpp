@@ -81,7 +81,7 @@ BrushFace::BrushFace(const BrushFace& other)
 }
 
 BrushFace::BrushFace(BrushFace&& other) noexcept
-  : Taggable(other)
+  : Taggable(std::move(other))
   , m_points(std::move(other.m_points))
   , m_boundary(std::move(other.m_boundary))
   , m_attributes(std::move(other.m_attributes))
@@ -441,9 +441,11 @@ int BrushFace::resolvedSurfaceContents() const
   }
   if (texture())
   {
-    if (const auto* q2data = std::get_if<Assets::Q2Data>(&texture()->gameData()))
+    if (
+      const auto* q2Defaults =
+        std::get_if<Assets::Q2EmbeddedDefaults>(&texture()->image().embeddedDefaults()))
     {
-      return q2data->contents;
+      return q2Defaults->contents;
     }
   }
   return 0;
@@ -457,9 +459,11 @@ int BrushFace::resolvedSurfaceFlags() const
   }
   if (texture())
   {
-    if (const auto* q2data = std::get_if<Assets::Q2Data>(&texture()->gameData()))
+    if (
+      const auto* q2Defaults =
+        std::get_if<Assets::Q2EmbeddedDefaults>(&texture()->image().embeddedDefaults()))
     {
-      return q2data->flags;
+      return q2Defaults->flags;
     }
   }
   return 0;
@@ -473,9 +477,11 @@ float BrushFace::resolvedSurfaceValue() const
   }
   if (texture())
   {
-    if (const auto* q2data = std::get_if<Assets::Q2Data>(&texture()->gameData()))
+    if (
+      const auto* q2Defaults =
+        std::get_if<Assets::Q2EmbeddedDefaults>(&texture()->image().embeddedDefaults()))
     {
-      return static_cast<float>(q2data->value);
+      return static_cast<float>(q2Defaults->value);
     }
   }
   return 0.0f;
@@ -510,9 +516,12 @@ vm::vec2f BrushFace::textureSize() const
   {
     return vm::vec2f::one();
   }
-  const float w = texture()->width() == 0 ? 1.0f : static_cast<float>(texture()->width());
-  const float h =
-    texture()->height() == 0 ? 1.0f : static_cast<float>(texture()->height());
+  const float w = texture()->image().width() == 0
+                    ? 1.0f
+                    : static_cast<float>(texture()->image().width());
+  const float h = texture()->image().height() == 0
+                    ? 1.0f
+                    : static_cast<float>(texture()->image().height());
   return vm::vec2f(w, h);
 }
 

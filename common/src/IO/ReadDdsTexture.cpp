@@ -253,14 +253,15 @@ Result<Assets::Texture, ReadTextureError> readDdsTexture(std::string name, Reade
     Assets::setMipBufferSize(buffers, numMips, width, height, format);
     readDdsMips(reader, buffers);
 
-    return Assets::Texture{
-      std::move(name),
+    auto image = Assets::TextureImage{
       width,
       height,
       Color{},
-      std::move(buffers),
       format,
-      Assets::TextureType::Opaque};
+      Assets::TextureMask::Off,
+      Assets::NoEmbeddedDefaults{},
+      std::move(buffers)};
+    return Assets::Texture{std::move(name), std::move(image)};
   }
   catch (const ReaderException& e)
   {

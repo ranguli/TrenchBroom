@@ -135,7 +135,7 @@ Result<Assets::Texture, ReadTextureError> readQ2Wal(
     const auto flags = reader.readInt<int32_t>();
     const auto contents = reader.readInt<int32_t>();
     const auto value = reader.readInt<int32_t>();
-    const auto gameData = Assets::Q2Data{flags, contents, value};
+    const auto embeddedDefaults = Assets::Q2EmbeddedDefaults{flags, contents, value};
 
     auto [buffers, hasTransparency] = readMips(
       *palette,
@@ -149,15 +149,16 @@ Result<Assets::Texture, ReadTextureError> readQ2Wal(
 
     unused(hasTransparency);
 
-    return Assets::Texture{
-      std::move(name),
+    auto image = Assets::TextureImage{
       width,
       height,
       averageColor,
-      std::move(buffers),
       GL_RGBA,
-      Assets::TextureType::Opaque,
-      gameData};
+      Assets::TextureMask::Off,
+      embeddedDefaults,
+      std::move(buffers)};
+
+    return Assets::Texture{std::move(name), std::move(image)};
   }
   catch (const ReaderException& e)
   {
@@ -199,7 +200,7 @@ Result<Assets::Texture, ReadTextureError> readDkWal(std::string name, Reader& re
     auto paletteReader = reader.subReaderFromCurrent(3 * 256);
     reader.seekForward(3 * 256); // seek past palette
     const auto value = reader.readInt<int32_t>();
-    const auto gameData = Assets::Q2Data{flags, contents, value};
+    const auto embeddedDefaults = Assets::Q2EmbeddedDefaults{flags, contents, value};
 
     return Assets::loadPalette(paletteReader, Assets::PaletteColorFormat::Rgb)
       .transform([&](const auto& palette) {
@@ -213,15 +214,16 @@ Result<Assets::Texture, ReadTextureError> readDkWal(std::string name, Reader& re
           averageColor,
           Assets::PaletteTransparency::Index255Transparent);
 
-        return Assets::Texture{
-          std::move(name),
+        auto image = Assets::TextureImage{
           width,
           height,
           averageColor,
-          std::move(buffers),
           GL_RGBA,
-          hasTransparency ? Assets::TextureType::Masked : Assets::TextureType::Opaque,
-          gameData};
+          hasTransparency ? Assets::TextureMask::On : Assets::TextureMask::Off,
+          embeddedDefaults,
+          std::move(buffers)};
+
+        return Assets::Texture{std::move(name), std::move(image)};
       })
       .or_else([&](const auto& error) {
         return Result<Assets::Texture, ReadTextureError>{

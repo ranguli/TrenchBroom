@@ -364,9 +364,9 @@ vm::vec2f Bsp29Parser::textureCoords(
 {
   return texture ? vm::vec2f{
            (vm::dot(vertex, textureInfo.sAxis) + textureInfo.sOffset)
-             / float(texture->width()),
+             / float(texture->image().width()),
            (vm::dot(vertex, textureInfo.tAxis) + textureInfo.tOffset)
-             / float(texture->height())}
+             / float(texture->image().height())}
                  : vm::vec2f::zero();
 }
 } // namespace IO

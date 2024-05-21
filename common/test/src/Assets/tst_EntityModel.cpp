@@ -87,10 +87,17 @@ TEST_CASE("BSP model intersection test")
   CHECK(vm::intersect_ray_bbox(missRay, box) == std::nullopt);
 }
 
-static Texture makeDummyTexture(const std::string& name)
+static Texture makeDummyTexture(std::string name)
 {
-  return Texture{
-    name, 1, 1, Color::zero(), TextureBuffer{4}, GL_RGBA, TextureType::Opaque};
+  auto image = TextureImage{
+    1,
+    1,
+    Color::zero(),
+    GL_RGBA,
+    TextureMask::Off,
+    Assets::NoEmbeddedDefaults{},
+    TextureBuffer{4}};
+  return Texture{std::move(name), std::move(image)};
 }
 
 static Renderer::IndexRangeMapBuilder<EntityModelVertex::Type> makeDummyBuilder()

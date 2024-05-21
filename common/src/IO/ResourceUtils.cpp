@@ -64,7 +64,7 @@ Assets::Texture loadDefaultTexture(const FileSystem& fs, std::string name, Logge
       })
       .transform_error([&](auto e) {
         logger.error() << "Could not load default texture: " << e.msg;
-        return Assets::Texture{std::move(name), 32, 32};
+        return Assets::Texture{std::move(name), Assets::TextureImage{32, 32}};
       })
       .value();
   }
@@ -72,7 +72,7 @@ Assets::Texture loadDefaultTexture(const FileSystem& fs, std::string name, Logge
   {
     logger.error() << "Could not load default texture";
   }
-  return Assets::Texture{std::move(name), 32, 32};
+  return Assets::Texture{std::move(name), Assets::TextureImage{32, 32}};
 }
 
 static QString imagePathToString(const std::filesystem::path& imagePath)

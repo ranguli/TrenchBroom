@@ -52,17 +52,6 @@ TextureCollection::TextureCollection(
 {
 }
 
-TextureCollection::~TextureCollection()
-{
-  if (!m_textureIds.empty())
-  {
-    glAssert(glDeleteTextures(
-      static_cast<GLsizei>(m_textureIds.size()),
-      static_cast<GLuint*>(&m_textureIds.front())));
-    m_textureIds.clear();
-  }
-}
-
 bool TextureCollection::loaded() const
 {
   return m_loaded;
@@ -116,32 +105,31 @@ Texture* TextureCollection::textureByName(const std::string& name)
 
 bool TextureCollection::prepared() const
 {
-  return !m_textureIds.empty();
+  return m_prepared;
 }
 
 void TextureCollection::prepare(const int minFilter, const int magFilter)
 {
   assert(!prepared());
 
-  m_textureIds.resize(textureCount());
   if (textureCount() != 0u)
   {
-    glAssert(glGenTextures(
-      static_cast<GLsizei>(textureCount()), static_cast<GLuint*>(&m_textureIds.front())));
-
     for (size_t i = 0; i < textureCount(); ++i)
     {
       auto& texture = m_textures[i];
-      texture.prepare(m_textureIds[i], minFilter, magFilter);
+      texture.image().upload();
+      texture.image().setMode(minFilter, magFilter);
     }
   }
+
+  m_prepared = true;
 }
 
 void TextureCollection::setTextureMode(const int minFilter, const int magFilter)
 {
   for (auto& texture : m_textures)
   {
-    texture.setMode(minFilter, magFilter);
+    texture.image().setMode(minFilter, magFilter);
   }
 }
 

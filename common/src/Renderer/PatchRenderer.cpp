@@ -341,7 +341,7 @@ struct RenderFunc : public TextureRenderFunc
     {
       texture->activate();
       shader.set("ApplyTexture", applyTexture);
-      shader.set("Color", texture->averageColor());
+      shader.set("Color", texture->image().averageColor());
     }
     else
     {

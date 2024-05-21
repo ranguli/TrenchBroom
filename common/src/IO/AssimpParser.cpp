@@ -210,14 +210,15 @@ Assets::Texture loadUncompressedEmbeddedTexture(
   std::memcpy(buffer.data(), &data, width * height * sizeof(aiTexel));
 
   const auto averageColor = getAverageColor(buffer, GL_BGRA);
-  return {
-    std::move(name),
+  auto textureImage = Assets::TextureImage{
     width,
     height,
     averageColor,
-    std::move(buffer),
     GL_BGRA,
-    Assets::TextureType::Masked};
+    Assets::TextureMask::On,
+    Assets::NoEmbeddedDefaults{},
+    std::move(buffer)};
+  return Assets::Texture{std::move(name), std::move(textureImage)};
 }
 
 Assets::Texture loadCompressedEmbeddedTexture(

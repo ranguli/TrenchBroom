@@ -16,6 +16,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/Assets/Texture.cpp
         ${COMMON_SOURCE_DIR}/Assets/TextureBuffer.cpp
         ${COMMON_SOURCE_DIR}/Assets/TextureCollection.cpp
+        ${COMMON_SOURCE_DIR}/Assets/TextureImage.cpp
         ${COMMON_SOURCE_DIR}/Assets/TextureManager.cpp
         ${COMMON_SOURCE_DIR}/Color.cpp
         ${COMMON_SOURCE_DIR}/EL/ELExceptions.cpp
@@ -504,6 +505,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/Assets/Texture.h
         ${COMMON_SOURCE_DIR}/Assets/TextureBuffer.h
         ${COMMON_SOURCE_DIR}/Assets/TextureCollection.h
+        ${COMMON_SOURCE_DIR}/Assets/TextureImage.h
         ${COMMON_SOURCE_DIR}/Assets/TextureManager.h
         ${COMMON_SOURCE_DIR}/Color.h
         ${COMMON_SOURCE_DIR}/EL/EL_Forward.h

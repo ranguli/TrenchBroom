@@ -53,9 +53,9 @@ protected:
 private:
   void SetUp()
   {
-    auto textureA = Assets::Texture("some_texture", 16, 16);
-    auto textureB = Assets::Texture("other_texture", 32, 32);
-    auto textureC = Assets::Texture("yet_another_texture", 64, 64);
+    auto textureA = Assets::Texture{"some_texture", Assets::TextureImage{16, 16}};
+    auto textureB = Assets::Texture{"other_texture", Assets::TextureImage{32, 32}};
+    auto textureC = Assets::Texture{"yet_another_texture", Assets::TextureImage{64, 64}};
 
     const std::string singleParam("some_parm");
     const std::set<std::string> multiParams({"parm1", "parm2"});

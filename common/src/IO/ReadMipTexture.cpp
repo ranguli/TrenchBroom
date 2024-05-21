@@ -114,17 +114,20 @@ Result<Assets::Texture, ReadTextureError> readMipTexture(
 
         const auto type =
           (transparent == Assets::PaletteTransparency::Index255Transparent)
-            ? Assets::TextureType::Masked
-            : Assets::TextureType::Opaque;
+            ? Assets::TextureMask::On
+            : Assets::TextureMask::Off;
 
-        return Result<Assets::Texture>{Assets::Texture{
-          std::move(name),
+        auto image = Assets::TextureImage{
           width,
           height,
           averageColor,
-          std::move(buffers),
           GL_RGBA,
-          type}};
+          type,
+          Assets::NoEmbeddedDefaults{},
+          std::move(buffers)};
+
+        return Result<Assets::Texture>{
+          Assets::Texture{std::move(name), std::move(image)}};
       })
       .or_else([&](const auto& e) {
         return Result<Assets::Texture, ReadTextureError>{

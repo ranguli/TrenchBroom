@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "Assets/TextureBuffer.h"
+#include "Assets/TextureImage.h"
 #include "Color.h"
 #include "Renderer/GL.h"
 
@@ -36,17 +36,6 @@
 
 namespace TrenchBroom::Assets
 {
-
-enum class TextureType
-{
-  Opaque,
-  /**
-   * Modifies texture uploading to support mask textures.
-   */
-  Masked
-};
-
-std::ostream& operator<<(std::ostream& lhs, const TextureType& rhs);
 
 enum class TextureCulling
 {
@@ -86,38 +75,16 @@ struct TextureBlendFunc
 
 std::ostream& operator<<(std::ostream& lhs, const TextureBlendFunc::Enable& rhs);
 
-struct Q2Data
-{
-  int flags;
-  int contents;
-  int value;
-
-  kdl_reflect_decl(Q2Data, flags, contents, value);
-};
-
-using GameData = std::variant<std::monostate, Q2Data>;
-
-std::ostream& operator<<(std::ostream& lhs, const GameData& rhs);
-
 class Texture
 {
-private:
-  using Buffer = TextureBuffer;
-  using BufferList = std::vector<Buffer>;
-
 private:
   std::string m_name;
   std::filesystem::path m_absolutePath;
   std::filesystem::path m_relativePath;
 
-  size_t m_width;
-  size_t m_height;
-  Color m_averageColor;
+  TextureImage m_image;
 
   std::atomic<size_t> m_usageCount;
-
-  GLenum m_format;
-  TextureType m_type;
 
   // TODO: move these to a Q3Data variant case of m_gameData if possible
   // Quake 3 surface parameters; move these to materials when we add proper support for
@@ -130,53 +97,19 @@ private:
   // Quake 3 blend function, move to materials
   TextureBlendFunc m_blendFunc;
 
-  mutable GLuint m_textureId;
-  mutable BufferList m_buffers;
-
-  GameData m_gameData;
-
   kdl_reflect_decl(
     Texture,
     m_name,
     m_absolutePath,
     m_relativePath,
-    m_width,
-    m_height,
-    m_averageColor,
+    m_image,
     m_usageCount,
-    m_format,
-    m_type,
     m_surfaceParms,
     m_culling,
-    m_blendFunc,
-    m_gameData);
+    m_blendFunc);
 
 public:
-  Texture(
-    std::string name,
-    size_t width,
-    size_t height,
-    const Color& averageColor,
-    Buffer&& buffer,
-    GLenum format,
-    TextureType type,
-    GameData gameData = std::monostate{});
-  Texture(
-    std::string name,
-    size_t width,
-    size_t height,
-    const Color& averageColor,
-    BufferList buffers,
-    GLenum format,
-    TextureType type,
-    GameData gameData = std::monostate{});
-  Texture(
-    std::string name,
-    size_t width,
-    size_t height,
-    GLenum format = GL_RGB,
-    TextureType type = TextureType::Opaque,
-    GameData gameData = std::monostate{});
+  Texture(std::string name, TextureImage image);
 
   Texture(const Texture&) = delete;
   Texture& operator=(const Texture&) = delete;
@@ -185,8 +118,6 @@ public:
   Texture& operator=(Texture&& other);
 
   ~Texture();
-
-  static TextureType selectTextureType(bool masked);
 
   const std::string& name() const;
 
@@ -202,11 +133,9 @@ public:
   const std::filesystem::path& relativePath() const;
   void setRelativePath(std::filesystem::path relativePath);
 
-  size_t width() const;
-  size_t height() const;
-  const Color& averageColor() const;
+  const TextureImage& image() const;
+  TextureImage& image();
 
-  bool masked() const;
   void setOpaque();
 
   const std::set<std::string>& surfaceParms() const;
@@ -218,30 +147,12 @@ public:
   void setBlendFunc(GLenum srcFactor, GLenum destFactor);
   void disableBlend();
 
-  const GameData& gameData() const;
-
   size_t usageCount() const;
   void incUsageCount();
   void decUsageCount();
 
-  bool isPrepared() const;
-  void prepare(GLuint textureId, int minFilter, int magFilter);
-  void setMode(int minFilter, int magFilter);
-
   void activate() const;
   void deactivate() const;
-
-public: // exposed for tests only
-  /**
-   * Returns the texture data in the format returned by format().
-   * Once prepare() is called, this will be an empty vector.
-   */
-  const BufferList& buffersIfUnprepared() const;
-  /**
-   * Will be one of GL_RGB, GL_BGR, GL_RGBA, GL_BGRA.
-   */
-  GLenum format() const;
-  TextureType type() const;
 };
 
 } // namespace TrenchBroom::Assets

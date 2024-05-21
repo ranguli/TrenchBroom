@@ -115,14 +115,17 @@ Result<Assets::Texture, ReadTextureError> readM8Texture(std::string name, Reader
           }
         }
 
-        return Result<Assets::Texture>{Assets::Texture{
-          std::move(name),
+        auto image = Assets::TextureImage{
           widths[0],
           heights[0],
           mip0AverageColor,
-          std::move(buffers),
           GL_RGBA,
-          Assets::TextureType::Opaque}};
+          Assets::TextureMask::Off,
+          Assets::NoEmbeddedDefaults{},
+          std::move(buffers)};
+
+        return Result<Assets::Texture>{
+          Assets::Texture{std::move(name), std::move(image)}};
       })
       .or_else([&](const auto& error) {
         return Result<Assets::Texture, ReadTextureError>{

@@ -23,6 +23,7 @@
 #include "Assets/Palette.h"
 #include "Assets/Texture.h"
 #include "Assets/TextureBuffer.h"
+#include "Assets/TextureImage.h"
 #include "Exceptions.h"
 #include "IO/Reader.h"
 #include "Renderer/IndexRangeMapBuilder.h"
@@ -479,9 +480,9 @@ Assets::Texture parseSkin(
   const auto transparency = (flags & MF_HOLEY)
                               ? Assets::PaletteTransparency::Index255Transparent
                               : Assets::PaletteTransparency::Opaque;
-  const auto type = (transparency == Assets::PaletteTransparency::Index255Transparent)
-                      ? Assets::TextureType::Masked
-                      : Assets::TextureType::Opaque;
+  const auto mask = (transparency == Assets::PaletteTransparency::Index255Transparent)
+                      ? Assets::TextureMask::On
+                      : Assets::TextureMask::Off;
   auto avgColor = Color{};
   auto rgbaImage = Assets::TextureBuffer{size * 4};
 
@@ -490,8 +491,15 @@ Assets::Texture parseSkin(
   {
     palette.indexedToRgba(reader, size, rgbaImage, transparency, avgColor);
 
-    return Assets::Texture{
-      std::move(skinName), width, height, avgColor, std::move(rgbaImage), GL_RGBA, type};
+    auto textureImage = Assets::TextureImage{
+      width,
+      height,
+      avgColor,
+      GL_RGBA,
+      mask,
+      Assets::NoEmbeddedDefaults{},
+      std::move(rgbaImage)};
+    return Assets::Texture{std::move(skinName), std::move(textureImage)};
   }
 
   const auto pictureCount = reader.readSize<int32_t>();
@@ -500,8 +508,15 @@ Assets::Texture parseSkin(
   palette.indexedToRgba(reader, size, rgbaImage, transparency, avgColor);
   reader.seekForward((pictureCount - 1) * size); // skip all remaining pictures
 
-  return Assets::Texture{
-    std::move(skinName), width, height, avgColor, std::move(rgbaImage), GL_RGBA, type};
+  auto textureImage = Assets::TextureImage{
+    width,
+    height,
+    avgColor,
+    GL_RGBA,
+    mask,
+    Assets::NoEmbeddedDefaults{},
+    std::move(rgbaImage)};
+  return Assets::Texture{std::move(skinName), std::move(textureImage)};
 }
 
 void parseSkins(

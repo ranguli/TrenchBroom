@@ -431,7 +431,7 @@ int getComponentOfPixel(
   const std::size_t y,
   const Component component)
 {
-  const auto format = texture.format();
+  const auto format = texture.image().format();
 
   ensure(GL_BGRA == format || GL_RGBA == format, "expected GL_BGRA or GL_RGBA");
 
@@ -473,14 +473,14 @@ int getComponentOfPixel(
     }
   }
 
-  const auto& mip0DataBuffer = texture.buffersIfUnprepared().at(0);
-  assert(texture.width() * texture.height() * 4 == mip0DataBuffer.size());
-  assert(x < texture.width());
-  assert(y < texture.height());
+  const auto& mip0DataBuffer = texture.image().buffersIfLoaded().at(0);
+  assert(texture.image().width() * texture.image().height() * 4 == mip0DataBuffer.size());
+  assert(x < texture.image().width());
+  assert(y < texture.image().height());
 
   const uint8_t* mip0Data = mip0DataBuffer.data();
   return static_cast<int>(
-    mip0Data[(texture.width() * 4u * y) + (x * 4u) + componentIndex]);
+    mip0Data[(texture.image().width() * 4u * y) + (x * 4u) + componentIndex]);
 }
 
 void checkColor(

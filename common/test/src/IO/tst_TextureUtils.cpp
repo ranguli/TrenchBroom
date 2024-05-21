@@ -69,8 +69,8 @@ TEST_CASE("makeReadTextureErrorHandler")
   const auto defaultTexture =
     std::move(result).or_else(makeReadTextureErrorHandler(diskFS, logger)).value();
   CHECK(defaultTexture.name() == "corruptPngTest");
-  CHECK(defaultTexture.width() == 32);
-  CHECK(defaultTexture.height() == 32);
+  CHECK(defaultTexture.image().width() == 32);
+  CHECK(defaultTexture.image().height() == 32);
 }
 } // namespace IO
 } // namespace TrenchBroom
