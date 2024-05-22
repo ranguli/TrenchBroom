@@ -171,7 +171,7 @@ Result<Assets::TextureCollection> loadTextureCollection(
   const std::filesystem::path& path,
   const FileSystem& gameFS,
   const Model::TextureConfig& textureConfig,
-  Logger&)
+  Logger& logger)
 {
   if (gameFS.pathInfo(path) != PathInfo::Directory)
   {
@@ -182,7 +182,6 @@ Result<Assets::TextureCollection> loadTextureCollection(
   const auto pathMatcher = !textureConfig.extensions.empty()
                              ? makeExtensionPathMatcher(textureConfig.extensions)
                              : matchAnyPath;
-  auto nullLogger = NullLogger{};
 
   return gameFS.find(path, TraversalMode::Flat, pathMatcher)
          | kdl::transform([&](auto texturePaths) {
@@ -213,7 +212,7 @@ Result<Assets::TextureCollection> loadTextureCollection(
                                             });
                                  })
                                | kdl::or_else(
-                                 makeReadTextureErrorHandler(gameFS, nullLogger));
+                                 makeReadTextureErrorHandler(gameFS, logger));
                       })
                     | kdl::fold();
            })
