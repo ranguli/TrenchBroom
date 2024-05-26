@@ -21,11 +21,13 @@
 
 #include "Assets/EntityModel.h"
 #include "Assets/Texture.h"
+#include "Error.h"
 #include "Exceptions.h"
 #include "IO/File.h"
 #include "IO/ReadMipTexture.h"
 #include "IO/Reader.h"
 #include "IO/ResourceUtils.h"
+#include "IO/TextureUtils.h"
 #include "Logger.h"
 #include "Renderer/PrimType.h"
 #include "Renderer/TexturedIndexRangeMap.h"
@@ -209,12 +211,17 @@ std::vector<Assets::Texture> Bsp29Parser::parseTextures(Reader reader, Logger& l
       continue;
     }
 
-    const auto textureName = readMipTextureName(reader);
+    auto textureName = readMipTextureName(reader);
     auto textureReader = reader.subReaderFromBegin(size_t(textureOffset)).buffer();
+    const auto mask = getTextureMaskFromTextureName(textureName);
 
-    result.push_back(readIdMipTexture(textureName, textureReader, m_palette)
-                       .or_else(makeReadTextureErrorHandler(m_fs, logger))
-                       .value());
+    result.push_back(
+      readIdMipTexture(textureReader, m_palette, mask)
+        .transform([&](auto textureImage) {
+          return Assets::Texture{std::move(textureName), std::move(textureImage)};
+        })
+        .or_else(makeReadTextureErrorHandler(m_fs, logger))
+        .value());
   }
 
   return result;

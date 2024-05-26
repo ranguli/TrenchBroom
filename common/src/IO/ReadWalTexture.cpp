@@ -19,11 +19,12 @@
 
 #include "ReadWalTexture.h"
 
-#include "Assets/Texture.h"
+#include "Assets/TextureImage.h"
 #include "Ensure.h"
 #include "Error.h"
 #include "IO/Reader.h"
 #include "IO/ReaderException.h"
+#include "IO/TextureUtils.h"
 
 #include "kdl/result.h"
 
@@ -103,8 +104,8 @@ std::tuple<Assets::TextureBufferList, bool> readMips(
   return {std::move(buffers), hasTransparency};
 }
 
-Result<Assets::Texture, ReadTextureError> readQ2Wal(
-  std::string name, Reader& reader, const std::optional<Assets::Palette>& palette)
+Result<Assets::TextureImage, Error> readQ2Wal(
+  Reader& reader, const std::optional<Assets::Palette>& palette)
 {
   static const auto MaxMipLevels = size_t(4);
   auto averageColor = Color{};
@@ -114,7 +115,7 @@ Result<Assets::Texture, ReadTextureError> readQ2Wal(
 
   if (!palette)
   {
-    return ReadTextureError{std::move(name), "Missing palette"};
+    return Error{"Missing palette"};
   }
 
   try
@@ -125,8 +126,7 @@ Result<Assets::Texture, ReadTextureError> readQ2Wal(
 
     if (!checkTextureDimensions(width, height))
     {
-      return ReadTextureError{
-        std::move(name), fmt::format("Invalid texture dimensions: {}*{}", width, height)};
+      return Error{fmt::format("Invalid texture dimensions: {}*{}", width, height)};
     }
 
     const auto mipLevels = readMipOffsets(MaxMipLevels, offsets, width, height, reader);
@@ -149,7 +149,7 @@ Result<Assets::Texture, ReadTextureError> readQ2Wal(
 
     unused(hasTransparency);
 
-    auto image = Assets::TextureImage{
+    return Assets::TextureImage{
       width,
       height,
       averageColor,
@@ -157,16 +157,14 @@ Result<Assets::Texture, ReadTextureError> readQ2Wal(
       Assets::TextureMask::Off,
       embeddedDefaults,
       std::move(buffers)};
-
-    return Assets::Texture{std::move(name), std::move(image)};
   }
   catch (const ReaderException& e)
   {
-    return ReadTextureError{std::move(name), e.what()};
+    return Error{e.what()};
   }
 }
 
-Result<Assets::Texture, ReadTextureError> readDkWal(std::string name, Reader& reader)
+Result<Assets::TextureImage, Error> readDkWal(Reader& reader)
 {
   static const auto MaxMipLevels = size_t(9);
   auto averageColor = Color{};
@@ -187,8 +185,7 @@ Result<Assets::Texture, ReadTextureError> readDkWal(std::string name, Reader& re
 
     if (!checkTextureDimensions(width, height))
     {
-      return ReadTextureError{
-        std::move(name), fmt::format("Invalid texture dimensions: {}*{}", width, height)};
+      return Error{fmt::format("Invalid texture dimensions: {}*{}", width, height)};
     }
 
     const auto mipLevels = readMipOffsets(MaxMipLevels, offsets, width, height, reader);
@@ -214,7 +211,7 @@ Result<Assets::Texture, ReadTextureError> readDkWal(std::string name, Reader& re
           averageColor,
           Assets::PaletteTransparency::Index255Transparent);
 
-        auto image = Assets::TextureImage{
+        return Assets::TextureImage{
           width,
           height,
           averageColor,
@@ -222,40 +219,30 @@ Result<Assets::Texture, ReadTextureError> readDkWal(std::string name, Reader& re
           hasTransparency ? Assets::TextureMask::On : Assets::TextureMask::Off,
           embeddedDefaults,
           std::move(buffers)};
-
-        return Assets::Texture{std::move(name), std::move(image)};
-      })
-      .or_else([&](const auto& error) {
-        return Result<Assets::Texture, ReadTextureError>{
-          ReadTextureError{std::move(name), error.msg}};
       });
     ;
   }
   catch (const ReaderException& e)
   {
-    return ReadTextureError{std::move(name), e.what()};
+    return Error{e.what()};
   }
 }
 
 } // namespace
 
-Result<Assets::Texture, ReadTextureError> readWalTexture(
-  std::string name, Reader& reader, const std::optional<Assets::Palette>& palette)
+Result<Assets::TextureImage, Error> readWalTexture(
+  Reader& reader, const std::optional<Assets::Palette>& palette)
 {
   try
   {
     const auto version = reader.readChar<char>();
     reader.seekFromBegin(0);
 
-    if (version == 3)
-    {
-      return readDkWal(std::move(name), reader);
-    }
-    return readQ2Wal(std::move(name), reader, palette);
+    return version == 3 ? readDkWal(reader) : readQ2Wal(reader, palette);
   }
   catch (const Exception& e)
   {
-    return ReadTextureError{std::move(name), e.what()};
+    return Error{e.what()};
   }
 }
 

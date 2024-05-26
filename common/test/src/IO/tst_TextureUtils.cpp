@@ -63,11 +63,20 @@ TEST_CASE("makeReadTextureErrorHandler")
 
   const auto file = diskFS.openFile("textures/corruptPngTest.png").value();
   auto reader = file->reader().buffer();
-  auto result = readFreeImageTexture("corruptPngTest", reader);
+  auto result = readFreeImageTexture(reader);
   REQUIRE(result.is_error());
 
   const auto defaultTexture =
-    std::move(result).or_else(makeReadTextureErrorHandler(diskFS, logger)).value();
+    std::move(result)
+      .transform([](auto textureImage) {
+        return Assets::Texture{"someName", std::move(textureImage)};
+      })
+      .or_else([](auto error) {
+        return Result<Assets::Texture, ReadTextureError>{
+          ReadTextureError{"corruptPngTest", std::move(error.msg)}};
+      })
+      .or_else(makeReadTextureErrorHandler(diskFS, logger))
+      .value();
   CHECK(defaultTexture.name() == "corruptPngTest");
   CHECK(defaultTexture.image().width() == 32);
   CHECK(defaultTexture.image().height() == 32);

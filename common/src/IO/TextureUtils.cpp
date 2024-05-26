@@ -25,9 +25,16 @@
 
 #include "kdl/path_utils.h"
 #include "kdl/reflection_impl.h"
+#include "kdl/string_compare.h"
 
 namespace TrenchBroom::IO
 {
+
+Assets::TextureMask getTextureMaskFromTextureName(std::string_view textureName)
+{
+  return kdl::cs::str_is_prefix(textureName, "{") ? Assets::TextureMask::On
+                                                  : Assets::TextureMask::Off;
+}
 
 std::string getTextureNameFromPathSuffix(
   const std::filesystem::path& path, size_t prefixLength)

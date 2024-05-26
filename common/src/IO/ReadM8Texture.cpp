@@ -20,8 +20,8 @@
 #include "ReadM8Texture.h"
 
 #include "Assets/Palette.h"
-#include "Assets/Texture.h"
 #include "Assets/TextureBuffer.h"
+#include "Assets/TextureImage.h"
 #include "Error.h"
 #include "IO/Reader.h"
 #include "IO/ReaderException.h"
@@ -43,15 +43,14 @@ constexpr size_t PaletteSize = 768;
 } // namespace M8Layout
 
 
-Result<Assets::Texture, ReadTextureError> readM8Texture(std::string name, Reader& reader)
+Result<Assets::TextureImage, Error> readM8Texture(Reader& reader)
 {
   try
   {
     const auto version = reader.readInt<int32_t>();
     if (version != M8Layout::Version)
     {
-      return ReadTextureError{
-        std::move(name), "Unknown M8 texture version: " + std::to_string(version)};
+      return Error{"Unknown M8 texture version: " + std::to_string(version)};
     }
 
     reader.seekForward(M8Layout::TextureNameLength);
@@ -83,7 +82,7 @@ Result<Assets::Texture, ReadTextureError> readM8Texture(std::string name, Reader
     reader.seekForward(M8Layout::PaletteSize);
 
     return Assets::loadPalette(paletteReader, Assets::PaletteColorFormat::Rgb)
-      .and_then([&](const auto& palette) {
+      .transform([&](const auto& palette) {
         reader.seekForward(4); // flags
         reader.seekForward(4); // contents
         reader.seekForward(4); // value
@@ -115,7 +114,7 @@ Result<Assets::Texture, ReadTextureError> readM8Texture(std::string name, Reader
           }
         }
 
-        auto image = Assets::TextureImage{
+        return Assets::TextureImage{
           widths[0],
           heights[0],
           mip0AverageColor,
@@ -123,18 +122,11 @@ Result<Assets::Texture, ReadTextureError> readM8Texture(std::string name, Reader
           Assets::TextureMask::Off,
           Assets::NoEmbeddedDefaults{},
           std::move(buffers)};
-
-        return Result<Assets::Texture>{
-          Assets::Texture{std::move(name), std::move(image)}};
-      })
-      .or_else([&](const auto& error) {
-        return Result<Assets::Texture, ReadTextureError>{
-          ReadTextureError{std::move(name), error.msg}};
       });
   }
   catch (const ReaderException& e)
   {
-    return ReadTextureError{std::move(name), e.what()};
+    return Error{e.what()};
   }
 }
 

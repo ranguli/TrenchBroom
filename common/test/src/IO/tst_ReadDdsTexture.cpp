@@ -37,14 +37,14 @@ namespace TrenchBroom
 {
 namespace IO
 {
-static Assets::Texture loadTexture(const std::string& name)
+static Assets::TextureImage loadTexture(const std::string& name)
 {
   const auto ddsPath = std::filesystem::current_path() / "fixture/test/IO/Dds/";
   auto diskFS = DiskFileSystem{ddsPath};
 
   const auto file = diskFS.openFile(name).value();
   auto reader = file->reader().buffer();
-  return readDdsTexture(name, reader).value();
+  return readDdsTexture(reader).value();
 }
 
 static void assertTexture(
@@ -52,11 +52,10 @@ static void assertTexture(
 {
   const auto texture = loadTexture(name);
 
-  CHECK(texture.name() == name);
-  CHECK(texture.image().width() == width);
-  CHECK(texture.image().height() == height);
-  CHECK(texture.image().format() == format);
-  CHECK(texture.image().mask() == Assets::TextureMask::Off);
+  CHECK(texture.width() == width);
+  CHECK(texture.height() == height);
+  CHECK(texture.format() == format);
+  CHECK(texture.mask() == Assets::TextureMask::Off);
 }
 
 TEST_CASE("ReadDdsTextureTest.testLoadDds")

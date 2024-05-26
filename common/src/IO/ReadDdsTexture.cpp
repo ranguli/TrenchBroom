@@ -20,10 +20,11 @@
 
 #include "ReadDdsTexture.h"
 
-#include "Assets/Texture.h"
 #include "Assets/TextureBuffer.h"
+#include "Assets/TextureImage.h"
 #include "IO/Reader.h"
 #include "IO/ReaderException.h"
+#include "IO/TextureUtils.h"
 
 #include "kdl/result.h"
 
@@ -128,15 +129,14 @@ void readDdsMips(Reader& reader, Assets::TextureBufferList& buffers)
 
 } // namespace
 
-Result<Assets::Texture, ReadTextureError> readDdsTexture(std::string name, Reader& reader)
+Result<Assets::TextureImage, Error> readDdsTexture(Reader& reader)
 {
   try
   {
     const auto ident = reader.readSize<uint32_t>();
     if (ident != DdsLayout::Ident)
     {
-      return ReadTextureError{
-        std::move(name), "Unknown Dds ident: " + std::to_string(ident)};
+      return Error{"Unknown Dds ident: " + std::to_string(ident)};
     }
 
     /*const auto size =*/reader.readSize<uint32_t>();
@@ -149,8 +149,7 @@ Result<Assets::Texture, ReadTextureError> readDdsTexture(std::string name, Reade
 
     if (!checkTextureDimensions(width, height))
     {
-      return ReadTextureError{
-        std::move(name), fmt::format("Invalid texture dimensions: {}*{}", width, height)};
+      return Error{fmt::format("Invalid texture dimensions: {}*{}", width, height)};
     }
 
     reader.seekFromBegin(DdsLayout::PixelFormatOffset);
@@ -243,8 +242,7 @@ Result<Assets::Texture, ReadTextureError> readDdsTexture(std::string name, Reade
 
     if (!format)
     {
-      return ReadTextureError{
-        std::move(name), "Invalid Dds texture format: " + std::to_string(format)};
+      return Error{"Invalid Dds texture format: " + std::to_string(format)};
     }
 
     const auto numMips = mipMapsCount ? mipMapsCount : 1;
@@ -253,7 +251,7 @@ Result<Assets::Texture, ReadTextureError> readDdsTexture(std::string name, Reade
     Assets::setMipBufferSize(buffers, numMips, width, height, format);
     readDdsMips(reader, buffers);
 
-    auto image = Assets::TextureImage{
+    return Assets::TextureImage{
       width,
       height,
       Color{},
@@ -261,11 +259,10 @@ Result<Assets::Texture, ReadTextureError> readDdsTexture(std::string name, Reade
       Assets::TextureMask::Off,
       Assets::NoEmbeddedDefaults{},
       std::move(buffers)};
-    return Assets::Texture{std::move(name), std::move(image)};
   }
   catch (const ReaderException& e)
   {
-    return ReadTextureError{std::move(name), e.what()};
+    return Error{e.what()};
   }
 }
 

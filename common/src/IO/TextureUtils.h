@@ -33,6 +33,7 @@
 #include <functional>
 #include <iosfwd>
 #include <string>
+#include <string_view>
 
 namespace TrenchBroom
 {
@@ -42,12 +43,15 @@ class Logger;
 namespace TrenchBroom::Assets
 {
 class Texture;
-}
+enum class TextureMask;
+} // namespace TrenchBroom::Assets
 
 namespace TrenchBroom::IO
 {
 class File;
 class FileSystem;
+
+Assets::TextureMask getTextureMaskFromTextureName(std::string_view textureName);
 
 std::string getTextureNameFromPathSuffix(
   const std::filesystem::path& path, size_t prefixLength);

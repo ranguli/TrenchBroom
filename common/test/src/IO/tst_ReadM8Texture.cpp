@@ -43,11 +43,10 @@ TEST_CASE("ReadM8TextureTest.testBasicLoading")
   const auto file = fs.openFile("fixture/test/IO/M8/test.m8").value();
 
   auto reader = file->reader().buffer();
-  auto texture = readM8Texture("test", reader).value();
+  auto texture = readM8Texture(reader).value();
 
-  CHECK("test" == texture.name());
-  CHECK(64 == texture.image().width());
-  CHECK(64 == texture.image().height());
+  CHECK(64 == texture.width());
+  CHECK(64 == texture.height());
 
   for (size_t y = 0; y < 64; ++y)
   {

@@ -28,6 +28,7 @@
 #include "IO/PathInfo.h"
 #include "IO/ReadFreeImageTexture.h"
 #include "IO/ResourceUtils.h"
+#include "IO/TextureUtils.h"
 #include "Logger.h"
 #include "Model/BrushFaceAttributes.h"
 #include "ReaderException.h"
@@ -174,10 +175,14 @@ std::optional<Assets::Texture> loadFallbackTexture(const FileSystem& fs)
   };
 
   return kdl::select_first(texturePaths, [&](const auto& texturePath) {
-    return fs.openFile(texturePath).and_then([](auto file) {
-      auto reader = file->reader().buffer();
-      return readFreeImageTexture("", reader);
-    });
+    return fs.openFile(texturePath)
+      .and_then([](auto file) {
+        auto reader = file->reader().buffer();
+        return readFreeImageTexture(reader);
+      })
+      .transform([](auto textureImage) {
+        return Assets::Texture{"", std::move(textureImage)};
+      });
   });
 }
 
@@ -197,7 +202,10 @@ Assets::Texture loadTextureFromFileSystem(
   return fs.openFile(path)
     .and_then([](auto file) {
       auto reader = file->reader().buffer();
-      return readFreeImageTexture("", reader);
+      return readFreeImageTexture(reader);
+    })
+    .transform([](auto textureImage) {
+      return Assets::Texture{"", std::move(textureImage)};
     })
     .or_else(makeReadTextureErrorHandler(fs, logger))
     .value();
@@ -228,8 +236,10 @@ Assets::Texture loadCompressedEmbeddedTexture(
   const FileSystem& fs,
   Logger& logger)
 {
-  return readFreeImageTextureFromMemory(
-           std::move(name), reinterpret_cast<const uint8_t*>(&data), size)
+  return readFreeImageTextureFromMemory(reinterpret_cast<const uint8_t*>(&data), size)
+    .transform([&](auto textureImage) {
+      return Assets::Texture{std::move(name), std::move(textureImage)};
+    })
     .or_else(makeReadTextureErrorHandler(fs, logger))
     .value();
 }

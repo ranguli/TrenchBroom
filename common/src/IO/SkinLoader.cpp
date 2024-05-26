@@ -56,13 +56,16 @@ Assets::Texture loadSkin(
   Logger& logger)
 {
   return fs.openFile(path)
-    .and_then([&](auto file) -> Result<Assets::Texture, ReadTextureError> {
+    .and_then([&](auto file) {
       const auto extension = kdl::str_to_lower(path.extension().string());
       auto reader = file->reader().buffer();
-      return extension == ".wal" ? readWalTexture(path.stem().string(), reader, palette)
-                                 : readFreeImageTexture(path.stem().string(), reader);
+      return extension == ".wal" ? readWalTexture(reader, palette)
+                                 : readFreeImageTexture(reader);
     })
-    .transform_error([&](auto e) -> Assets::Texture {
+    .transform([&](auto textureImage) {
+      return Assets::Texture{path.stem().string(), std::move(textureImage)};
+    })
+    .transform_error([&](auto e) {
       logger.error() << "Could not load skin '" << path << "': " << e.msg;
       return loadDefaultTexture(fs, path.stem().string(), logger);
     })

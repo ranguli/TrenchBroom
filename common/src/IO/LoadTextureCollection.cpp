@@ -82,6 +82,56 @@ Result<Assets::Palette> loadPalette(
 using ReadTextureFunc = std::function<Result<Assets::Texture, ReadTextureError>(
   const File&, const std::filesystem::path&)>;
 
+Result<Assets::TextureImage, Error> readTextureImage(
+  const File& file,
+  const std::filesystem::path& path,
+  const std::string& name,
+  const std::string& extension,
+  const std::optional<Assets::Palette>& palette)
+{
+  if (extension == ".d")
+  {
+    if (!palette)
+    {
+      return Error{"Could not load texture: missing palette"};
+    }
+
+    auto reader = file.reader().buffer();
+    const auto mask = getTextureMaskFromTextureName(name);
+
+    return readIdMipTexture(reader, *palette, mask);
+  }
+  else if (extension == ".c")
+  {
+    auto reader = file.reader().buffer();
+    const auto mask = getTextureMaskFromTextureName(name);
+
+    return readHlMipTexture(reader, mask);
+  }
+  else if (extension == ".wal")
+  {
+    auto reader = file.reader().buffer();
+    return readWalTexture(reader, palette);
+  }
+  else if (extension == ".m8")
+  {
+    auto reader = file.reader().buffer();
+    return readM8Texture(reader);
+  }
+  else if (extension == ".dds")
+  {
+    auto reader = file.reader().buffer();
+    return readDdsTexture(reader);
+  }
+  else if (isSupportedFreeImageExtension(extension))
+  {
+    auto reader = file.reader().buffer();
+    return readFreeImageTexture(reader);
+  }
+
+  return Error{"Unknown texture file extension: " + path.extension().string()};
+}
+
 Result<Assets::Texture, ReadTextureError> readTexture(
   const File& file,
   const std::filesystem::path& path,
@@ -91,48 +141,20 @@ Result<Assets::Texture, ReadTextureError> readTexture(
 {
   auto name = getTextureNameFromPathSuffix(path, prefixLength);
   const auto extension = kdl::str_to_lower(path.extension().string());
-  if (extension == ".d")
+  if (!extension.empty())
   {
-    if (!palette)
-    {
-      return ReadTextureError{std::move(name), "Could not load texture: missing palette"};
-    }
-    auto reader = file.reader().buffer();
-    return readIdMipTexture(std::move(name), reader, *palette);
-  }
-  else if (extension == ".c")
-  {
-    auto reader = file.reader().buffer();
-    return readHlMipTexture(std::move(name), reader);
-  }
-  else if (extension == ".wal")
-  {
-    auto reader = file.reader().buffer();
-    return readWalTexture(std::move(name), reader, palette);
-  }
-  else if (extension == ".m8")
-  {
-    auto reader = file.reader().buffer();
-    return readM8Texture(std::move(name), reader);
-  }
-  else if (extension == ".dds")
-  {
-    auto reader = file.reader().buffer();
-    return readDdsTexture(std::move(name), reader);
-  }
-  else if (extension.empty())
-  {
-    auto reader = file.reader().buffer();
-    return readQuake3ShaderTexture(std::move(name), file, gameFS);
-  }
-  else if (isSupportedFreeImageExtension(extension))
-  {
-    auto reader = file.reader().buffer();
-    return readFreeImageTexture(std::move(name), reader);
+    return readTextureImage(file, path, name, extension, palette)
+           | kdl::transform([&](auto textureImage) {
+               return Assets::Texture{std::move(name), std::move(textureImage)};
+             })
+           | kdl::or_else([&](auto error) {
+               return Result<Assets::Texture, ReadTextureError>{
+                 ReadTextureError{std::move(name), std::move(error.msg)}};
+             });
   }
 
-  return ReadTextureError{
-    std::move(name), "Unknown texture file extension: " + path.extension().string()};
+  auto reader = file.reader().buffer();
+  return readQuake3ShaderTexture(std::move(name), file, gameFS);
 }
 
 Result<ReadTextureFunc> makeReadTextureFunc(

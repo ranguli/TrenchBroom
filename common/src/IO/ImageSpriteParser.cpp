@@ -21,9 +21,11 @@
 
 #include "Assets/EntityModel.h"
 #include "Assets/Texture.h"
+#include "Error.h"
 #include "FloatType.h"
 #include "IO/File.h"
 #include "IO/ReadFreeImageTexture.h"
+#include "IO/TextureUtils.h"
 #include "Renderer/IndexRangeMapBuilder.h"
 #include "Renderer/PrimType.h"
 
@@ -56,7 +58,10 @@ std::unique_ptr<Assets::EntityModel> ImageSpriteParser::initializeModel(Logger& 
   auto textures = std::vector<Assets::Texture>{};
 
   auto reader = m_file->reader().buffer();
-  textures.push_back(readFreeImageTexture(m_name, reader)
+  textures.push_back(readFreeImageTexture(reader)
+                       .transform([&](auto textureImage) {
+                         return Assets::Texture{m_name, std::move(textureImage)};
+                       })
                        .or_else(makeReadTextureErrorHandler(m_fs, logger))
                        .value());
 

@@ -19,12 +19,14 @@
 
 #include "ReadFreeImageTexture.h"
 
-#include "Assets/Texture.h"
 #include "Assets/TextureBuffer.h"
+#include "Assets/TextureImage.h"
 #include "Ensure.h"
+#include "Error.h"
 #include "FreeImage.h"
 #include "IO/ImageLoaderImpl.h"
 #include "IO/Reader.h"
+#include "IO/TextureUtils.h"
 
 #include "kdl/invoke.h"
 #include "kdl/resource.h"
@@ -98,8 +100,8 @@ Color getAverageColor(const Assets::TextureBuffer& buffer, const GLenum format)
   return average;
 }
 
-Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
-  std::string name, const uint8_t* begin, const size_t size)
+Result<Assets::TextureImage, Error> readFreeImageTextureFromMemory(
+  const uint8_t* begin, const size_t size)
 {
   try
   {
@@ -115,7 +117,7 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
 
     if (!image)
     {
-      return ReadTextureError{std::move(name), "FreeImage could not load image data"};
+      return Error{"FreeImage could not load image data"};
     }
 
     const auto imageWidth = size_t(FreeImage_GetWidth(*image));
@@ -123,8 +125,7 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
 
     if (!checkTextureDimensions(imageWidth, imageHeight))
     {
-      return ReadTextureError{
-        std::move(name),
+      return Error{
         fmt::format("Invalid texture dimensions: {}*{}", imageWidth, imageHeight)};
     }
 
@@ -146,7 +147,7 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
 
     if (!image)
     {
-      return ReadTextureError{std::move(name), "Unsupported pixel format"};
+      return Error{"Unsupported pixel format"};
     }
 
     assert(FreeImage_GetLine(*image) / FreeImage_GetWidth(*image) == 4);
@@ -167,7 +168,7 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
     const auto textureMask = masked ? Assets::TextureMask::On : Assets::TextureMask::Off;
     const auto averageColor = getAverageColor(buffers.at(0), format);
 
-    auto textureImage = Assets::TextureImage{
+    return Assets::TextureImage{
       imageWidth,
       imageHeight,
       averageColor,
@@ -175,16 +176,14 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTextureFromMemory(
       textureMask,
       Assets::NoEmbeddedDefaults{},
       std::move(buffers)};
-    return Assets::Texture{std::move(name), std::move(textureImage)};
   }
   catch (const std::exception& e)
   {
-    return ReadTextureError{std::move(name), e.what()};
+    return Error{e.what()};
   }
 }
 
-Result<Assets::Texture, ReadTextureError> readFreeImageTexture(
-  std::string name, Reader& reader)
+Result<Assets::TextureImage, Error> readFreeImageTexture(Reader& reader)
 {
   auto bufferedReader = reader.buffer();
   const auto* begin = bufferedReader.begin();
@@ -192,7 +191,7 @@ Result<Assets::Texture, ReadTextureError> readFreeImageTexture(
   const auto imageSize = size_t(end - begin);
   auto* imageBegin = reinterpret_cast<BYTE*>(const_cast<char*>(begin));
 
-  return readFreeImageTextureFromMemory(std::move(name), imageBegin, imageSize);
+  return readFreeImageTextureFromMemory(imageBegin, imageSize);
 }
 
 namespace

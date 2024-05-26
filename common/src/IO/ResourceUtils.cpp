@@ -58,9 +58,12 @@ Assets::Texture loadDefaultTexture(const FileSystem& fs, std::string name, Logge
     const auto set_executing = kdl::set_temp{executing};
 
     return fs.openFile("textures/__TB_empty.png")
-      .and_then([&](auto file) {
+      .and_then([](auto file) {
         auto reader = file->reader().buffer();
-        return readFreeImageTexture(name, reader);
+        return readFreeImageTexture(reader);
+      })
+      .transform([&](auto textureImage) {
+        return Assets::Texture{std::move(name), std::move(textureImage)};
       })
       .transform_error([&](auto e) {
         logger.error() << "Could not load default texture: " << e.msg;

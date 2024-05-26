@@ -122,11 +122,14 @@ Result<Assets::Texture, ReadTextureError> loadTextureImage(
   return fs.openFile(imagePath)
     .and_then([&](auto file) {
       auto reader = file->reader().buffer();
-      return readFreeImageTexture(shaderName, reader);
+      return readFreeImageTexture(reader);
+    })
+    .transform([&](auto textureImage) {
+      return Assets::Texture{std::move(shaderName), std::move(textureImage)};
     })
     .or_else([&](auto e) {
       return Result<Assets::Texture, ReadTextureError>{
-        ReadTextureError{shaderName, e.msg}};
+        ReadTextureError{std::move(shaderName), e.msg}};
     });
 }
 
