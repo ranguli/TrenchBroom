@@ -69,7 +69,7 @@ TEST_CASE("makeReadTextureErrorHandler")
   const auto defaultTexture =
     std::move(result)
       .transform([](auto textureImage) {
-        return Assets::Texture{"someName", std::move(textureImage)};
+        return Assets::Texture{"someName", makeResource(std::move(textureImage))};
       })
       .or_else([](auto error) {
         return Result<Assets::Texture, ReadTextureError>{
@@ -78,8 +78,8 @@ TEST_CASE("makeReadTextureErrorHandler")
       .or_else(makeReadTextureErrorHandler(diskFS, logger))
       .value();
   CHECK(defaultTexture.name() == "corruptPngTest");
-  CHECK(defaultTexture.image().width() == 32);
-  CHECK(defaultTexture.image().height() == 32);
+  CHECK(defaultTexture.image()->width() == 32);
+  CHECK(defaultTexture.image()->height() == 32);
 }
 } // namespace IO
 } // namespace TrenchBroom

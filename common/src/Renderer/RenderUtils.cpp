@@ -37,24 +37,17 @@ static const double EdgeOffset = 0.0001;
 
 vm::vec3f gridColorForTexture(const Assets::Texture* texture)
 {
-  if (texture == nullptr)
+  if (const auto* image = getTextureImage(texture))
   {
-    return vm::vec3f::fill(1.0f);
+    const auto& avgColor = image->averageColor();
+    const auto avgBrightness = (avgColor.r() + avgColor.g() + avgColor.b()) / 3.0f;
+    if (avgBrightness > 0.50f)
+    {
+      // bright texture grid color
+      return vm::vec3f::zero();
+    }
   }
-  if (
-    (texture->image().averageColor().r() + texture->image().averageColor().g()
-     + texture->image().averageColor().b())
-      / 3.0f
-    > 0.50f)
-  {
-    // bright texture grid color
-    return vm::vec3f::fill(0.0f);
-  }
-  else
-  {
-    // dark texture grid color
-    return vm::vec3f::fill(1.0f);
-  }
+  return vm::vec3f::one();
 }
 
 void glSetEdgeOffset(const double f)

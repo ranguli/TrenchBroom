@@ -73,8 +73,8 @@ std::optional<TextureCollectionInfo> makeInfo(
         kdl::vec_transform(textureCollection.textures(), [](const auto& texture) {
           return TextureInfo{
             texture.name(),
-            texture.image().width(),
-            texture.image().height(),
+            texture.image()->width(),
+            texture.image()->height(),
           };
         })};
     })

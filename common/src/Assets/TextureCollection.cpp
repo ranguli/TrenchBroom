@@ -117,8 +117,11 @@ void TextureCollection::prepare(const int minFilter, const int magFilter)
     for (size_t i = 0; i < textureCount(); ++i)
     {
       auto& texture = m_textures[i];
-      texture.image().upload();
-      texture.image().setMode(minFilter, magFilter);
+      if (auto* image = texture.image())
+      {
+        image->upload();
+        image->setMode(minFilter, magFilter);
+      }
     }
   }
 
@@ -129,7 +132,10 @@ void TextureCollection::setTextureMode(const int minFilter, const int magFilter)
 {
   for (auto& texture : m_textures)
   {
-    texture.image().setMode(minFilter, magFilter);
+    if (auto* image = texture.image())
+    {
+      image->setMode(minFilter, magFilter);
+    }
   }
 }
 

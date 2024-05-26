@@ -20,6 +20,7 @@
 #include "UVViewHelper.h"
 
 #include "Assets/Texture.h"
+#include "Assets/TextureImage.h"
 #include "FloatType.h"
 #include "Model/BrushFace.h"
 #include "Model/PickResult.h"
@@ -90,12 +91,10 @@ vm::vec2 UVViewHelper::stripeSize() const
 {
   assert(valid());
 
-  if (const auto* texture = face()->texture())
+  if (const auto* image = getTextureImage(face()->texture()))
   {
-    const auto width =
-      FloatType(texture->image().width()) / FloatType(m_subDivisions.x());
-    const auto height =
-      FloatType(texture->image().height()) / FloatType(m_subDivisions.y());
+    const auto width = FloatType(image->width()) / FloatType(m_subDivisions.x());
+    const auto height = FloatType(image->height()) / FloatType(m_subDivisions.y());
     return vm::vec2{width, height};
   }
 

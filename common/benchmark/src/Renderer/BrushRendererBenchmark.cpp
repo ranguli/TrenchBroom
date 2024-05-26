@@ -18,7 +18,9 @@
  */
 
 #include "../../test/src/Catch2.h"
+#include "Assets/Resource.h"
 #include "Assets/Texture.h"
+#include "Assets/TextureImage.h"
 #include "BenchmarkUtils.h"
 #include "Error.h"
 #include "Exceptions.h"
@@ -34,6 +36,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -56,7 +59,8 @@ makeBrushes()
   for (size_t i = 0; i < NumTextures; ++i)
   {
     const auto textureName = "texture " + std::to_string(i);
-    textures.push_back(new Assets::Texture{textureName, Assets::TextureImage{64, 64}});
+    textures.push_back(
+      new Assets::Texture{textureName, makeResource(Assets::TextureImage{64, 64})});
   }
 
   // make brushes, cycling through the textures for each face

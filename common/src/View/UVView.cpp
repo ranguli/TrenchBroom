@@ -118,28 +118,29 @@ private:
     const auto* texture = m_helper.face()->texture();
     ensure(texture, "texture is null");
 
-    texture->activate();
+    if (const auto* image = texture->image())
+    {
+      texture->activate();
 
-    auto shader = Renderer::ActiveShader{
-      renderContext.shaderManager(), Renderer::Shaders::UVViewShader};
-    shader.set("ApplyTexture", true);
-    shader.set("Color", texture->image().averageColor());
-    shader.set("Brightness", pref(Preferences::Brightness));
-    shader.set("RenderGrid", true);
-    shader.set(
-      "GridSizes",
-      vm::vec2f{float(texture->image().width()), float(texture->image().height())});
-    shader.set("GridColor", vm::vec4f{Renderer::gridColorForTexture(texture), 0.6f});
-    shader.set("DpiScale", renderContext.dpiScale());
-    shader.set("GridScales", scale);
-    shader.set("GridMatrix", vm::mat4x4f{toTex});
-    shader.set("GridDivider", vm::vec2f{m_helper.subDivisions()});
-    shader.set("CameraZoom", m_helper.cameraZoom());
-    shader.set("Texture", 0);
+      auto shader = Renderer::ActiveShader{
+        renderContext.shaderManager(), Renderer::Shaders::UVViewShader};
+      shader.set("ApplyTexture", true);
+      shader.set("Color", image->averageColor());
+      shader.set("Brightness", pref(Preferences::Brightness));
+      shader.set("RenderGrid", true);
+      shader.set("GridSizes", vm::vec2f{float(image->width()), float(image->height())});
+      shader.set("GridColor", vm::vec4f{Renderer::gridColorForTexture(texture), 0.6f});
+      shader.set("DpiScale", renderContext.dpiScale());
+      shader.set("GridScales", scale);
+      shader.set("GridMatrix", vm::mat4x4f{toTex});
+      shader.set("GridDivider", vm::vec2f{m_helper.subDivisions()});
+      shader.set("CameraZoom", m_helper.cameraZoom());
+      shader.set("Texture", 0);
 
-    m_vertexArray.render(Renderer::PrimType::Quads);
+      m_vertexArray.render(Renderer::PrimType::Quads);
 
-    texture->deactivate();
+      texture->deactivate();
+    }
   }
 };
 

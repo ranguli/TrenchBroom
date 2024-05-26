@@ -337,11 +337,11 @@ struct RenderFunc : public TextureRenderFunc
   void before(const Assets::Texture* texture) override
   {
     shader.set("GridColor", gridColorForTexture(texture));
-    if (texture != nullptr)
+    if (const auto* image = getTextureImage(texture))
     {
       texture->activate();
       shader.set("ApplyTexture", applyTexture);
-      shader.set("Color", texture->image().averageColor());
+      shader.set("Color", image->averageColor());
     }
     else
     {

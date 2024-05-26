@@ -439,11 +439,12 @@ int BrushFace::resolvedSurfaceContents() const
   {
     return *m_attributes.surfaceContents();
   }
-  if (texture())
+
+  if (const auto* image = getTextureImage(texture()))
   {
     if (
       const auto* q2Defaults =
-        std::get_if<Assets::Q2EmbeddedDefaults>(&texture()->image().embeddedDefaults()))
+        std::get_if<Assets::Q2EmbeddedDefaults>(&image->embeddedDefaults()))
     {
       return q2Defaults->contents;
     }
@@ -457,11 +458,11 @@ int BrushFace::resolvedSurfaceFlags() const
   {
     return *m_attributes.surfaceFlags();
   }
-  if (texture())
+  if (const auto* image = getTextureImage(texture()))
   {
     if (
       const auto* q2Defaults =
-        std::get_if<Assets::Q2EmbeddedDefaults>(&texture()->image().embeddedDefaults()))
+        std::get_if<Assets::Q2EmbeddedDefaults>(&image->embeddedDefaults()))
     {
       return q2Defaults->flags;
     }
@@ -475,11 +476,11 @@ float BrushFace::resolvedSurfaceValue() const
   {
     return *m_attributes.surfaceValue();
   }
-  if (texture())
+  if (const auto* image = getTextureImage(texture()))
   {
     if (
       const auto* q2Defaults =
-        std::get_if<Assets::Q2EmbeddedDefaults>(&texture()->image().embeddedDefaults()))
+        std::get_if<Assets::Q2EmbeddedDefaults>(&image->embeddedDefaults()))
     {
       return static_cast<float>(q2Defaults->value);
     }
@@ -512,17 +513,14 @@ const Assets::Texture* BrushFace::texture() const
 
 vm::vec2f BrushFace::textureSize() const
 {
-  if (texture() == nullptr)
+  if (const auto* image = getTextureImage(texture()))
   {
-    return vm::vec2f::one();
+    return vm::vec2f{
+      image->width() == 0 ? 1.0f : float(image->width()),
+      image->height() == 0 ? 1.0f : float(image->height())};
   }
-  const float w = texture()->image().width() == 0
-                    ? 1.0f
-                    : static_cast<float>(texture()->image().width());
-  const float h = texture()->image().height() == 0
-                    ? 1.0f
-                    : static_cast<float>(texture()->image().height());
-  return vm::vec2f(w, h);
+
+  return vm::vec2f::one();
 }
 
 vm::vec2f BrushFace::modOffset(const vm::vec2f& offset) const

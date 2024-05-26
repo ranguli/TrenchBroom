@@ -51,8 +51,8 @@ struct TextureInfo
 
 bool operator==(const Assets::Texture& lhs, const TextureInfo& rhs)
 {
-  return lhs.name() == rhs.name && lhs.image().width() == rhs.width
-         && lhs.image().height() == rhs.height;
+  return lhs.name() == rhs.name && lhs.image()->width() == rhs.width
+         && lhs.image()->height() == rhs.height;
 }
 
 bool operator==(

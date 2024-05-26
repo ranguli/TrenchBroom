@@ -20,6 +20,7 @@
 #include "FaceRenderer.h"
 
 #include "Assets/Texture.h"
+#include "Assets/TextureImage.h"
 #include "PreferenceManager.h"
 #include "Preferences.h"
 #include "Renderer/ActiveShader.h"
@@ -55,11 +56,11 @@ public:
 
   void before(const Assets::Texture* texture) override
   {
-    if (texture)
+    if (const auto* image = getTextureImage(texture))
     {
       texture->activate();
       m_shader.set("ApplyTexture", m_applyTexture);
-      m_shader.set("Color", texture->image().averageColor());
+      m_shader.set("Color", image->averageColor());
     }
     else
     {
@@ -173,8 +174,8 @@ void FaceRenderer::doRender(RenderContext& context)
     {
       if (brushIndexHolderPtr->hasValidIndices())
       {
-        const auto enableMasked =
-          texture && texture->image().mask() == Assets::TextureMask::On;
+        const auto* image = getTextureImage(texture);
+        const auto enableMasked = image && image->mask() == Assets::TextureMask::On;
 
         // set any per-texture uniforms
         shader.set("GridColor", gridColorForTexture(texture));

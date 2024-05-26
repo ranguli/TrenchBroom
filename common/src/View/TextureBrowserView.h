@@ -92,7 +92,7 @@ private:
     const std::vector<const Assets::Texture*>& textures,
     const Renderer::FontDescriptor& font);
   void addTextureToLayout(
-    Layout& layout, const Assets::Texture* texture, const Renderer::FontDescriptor& font);
+    Layout& layout, const Assets::Texture& texture, const Renderer::FontDescriptor& font);
 
   std::vector<const Assets::TextureCollection*> getCollections() const;
   std::vector<const Assets::Texture*> getTextures(

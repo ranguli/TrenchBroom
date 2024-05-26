@@ -89,15 +89,15 @@ TEST_CASE("BSP model intersection test")
 
 static Texture makeDummyTexture(std::string name)
 {
-  auto image = TextureImage{
+  auto imageResource = makeResource(TextureImage{
     1,
     1,
     Color::zero(),
     GL_RGBA,
     TextureMask::Off,
     Assets::NoEmbeddedDefaults{},
-    TextureBuffer{4}};
-  return Texture{std::move(name), std::move(image)};
+    TextureBuffer{4}});
+  return Texture{std::move(name), std::move(imageResource)};
 }
 
 static Renderer::IndexRangeMapBuilder<EntityModelVertex::Type> makeDummyBuilder()

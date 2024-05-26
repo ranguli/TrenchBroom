@@ -31,6 +31,7 @@
 #include <QThread>
 
 #include "Assets/Texture.h"
+#include "Assets/TextureImage.h"
 #include "Ensure.h"
 #include "Error.h"
 #include "IO/File.h"
@@ -63,11 +64,12 @@ Assets::Texture loadDefaultTexture(const FileSystem& fs, std::string name, Logge
         return readFreeImageTexture(reader);
       })
       .transform([&](auto textureImage) {
-        return Assets::Texture{std::move(name), std::move(textureImage)};
+        return Assets::Texture{std::move(name), makeResource(std::move(textureImage))};
       })
       .transform_error([&](auto e) {
         logger.error() << "Could not load default texture: " << e.msg;
-        return Assets::Texture{std::move(name), Assets::TextureImage{32, 32}};
+        return Assets::Texture{
+          std::move(name), makeResource(Assets::TextureImage{32, 32})};
       })
       .value();
   }
@@ -75,7 +77,7 @@ Assets::Texture loadDefaultTexture(const FileSystem& fs, std::string name, Logge
   {
     logger.error() << "Could not load default texture";
   }
-  return Assets::Texture{std::move(name), Assets::TextureImage{32, 32}};
+  return Assets::Texture{std::move(name), makeResource(Assets::TextureImage{32, 32})};
 }
 
 static QString imagePathToString(const std::filesystem::path& imagePath)

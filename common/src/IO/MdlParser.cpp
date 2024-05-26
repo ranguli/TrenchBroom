@@ -491,15 +491,15 @@ Assets::Texture parseSkin(
   {
     palette.indexedToRgba(reader, size, rgbaImage, transparency, avgColor);
 
-    auto textureImage = Assets::TextureImage{
+    auto imageResource = makeResource(Assets::TextureImage{
       width,
       height,
       avgColor,
       GL_RGBA,
       mask,
       Assets::NoEmbeddedDefaults{},
-      std::move(rgbaImage)};
-    return Assets::Texture{std::move(skinName), std::move(textureImage)};
+      std::move(rgbaImage)});
+    return Assets::Texture{std::move(skinName), std::move(imageResource)};
   }
 
   const auto pictureCount = reader.readSize<int32_t>();
@@ -508,15 +508,15 @@ Assets::Texture parseSkin(
   palette.indexedToRgba(reader, size, rgbaImage, transparency, avgColor);
   reader.seekForward((pictureCount - 1) * size); // skip all remaining pictures
 
-  auto textureImage = Assets::TextureImage{
+  auto imageResource = makeResource(Assets::TextureImage{
     width,
     height,
     avgColor,
     GL_RGBA,
     mask,
     Assets::NoEmbeddedDefaults{},
-    std::move(rgbaImage)};
-  return Assets::Texture{std::move(skinName), std::move(textureImage)};
+    std::move(rgbaImage)});
+  return Assets::Texture{std::move(skinName), std::move(imageResource)};
 }
 
 void parseSkins(

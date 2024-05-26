@@ -22,6 +22,7 @@
 #include "Assets/EntityModel.h"
 #include "Assets/Palette.h"
 #include "Assets/Texture.h"
+#include "Assets/TextureImage.h"
 #include "Color.h"
 #include "Error.h"
 #include "Exceptions.h"
@@ -86,16 +87,16 @@ static SprPicture parsePicture(Reader& reader, const Assets::Palette& palette)
     Assets::PaletteTransparency::Index255Transparent,
     averageColor);
 
-  auto textureImage = Assets::TextureImage{
+  auto imageResource = makeResource(Assets::TextureImage{
     width,
     height,
     averageColor,
     GL_RGBA,
     Assets::TextureMask::On,
     Assets::NoEmbeddedDefaults{},
-    std::move(rgbaImage)};
+    std::move(rgbaImage)});
   return SprPicture{
-    Assets::Texture{"", std::move(textureImage)}, xOffset, yOffset, width, height};
+    Assets::Texture{"", std::move(imageResource)}, xOffset, yOffset, width, height};
 }
 
 static void skipPicture(Reader& reader)

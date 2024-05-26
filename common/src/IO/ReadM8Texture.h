@@ -26,6 +26,11 @@ namespace TrenchBroom::Assets
 class TextureImage;
 }
 
+namespace TrenchBroom::Assets
+{
+class TextureImage;
+}
+
 namespace TrenchBroom::IO
 {
 class Reader;

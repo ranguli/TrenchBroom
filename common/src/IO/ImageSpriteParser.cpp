@@ -58,12 +58,13 @@ std::unique_ptr<Assets::EntityModel> ImageSpriteParser::initializeModel(Logger& 
   auto textures = std::vector<Assets::Texture>{};
 
   auto reader = m_file->reader().buffer();
-  textures.push_back(readFreeImageTexture(reader)
-                       .transform([&](auto textureImage) {
-                         return Assets::Texture{m_name, std::move(textureImage)};
-                       })
-                       .or_else(makeReadTextureErrorHandler(m_fs, logger))
-                       .value());
+  textures.push_back(
+    readFreeImageTexture(reader)
+      .transform([&](auto textureImage) {
+        return Assets::Texture{m_name, makeResource(std::move(textureImage))};
+      })
+      .or_else(makeReadTextureErrorHandler(m_fs, logger))
+      .value());
 
   auto model = std::make_unique<Assets::EntityModel>(
     m_name, Assets::PitchType::Normal, Assets::Orientation::ViewPlaneParallel);
@@ -80,10 +81,10 @@ void ImageSpriteParser::loadFrame(
 {
   auto& surface = model.surface(0);
 
-  if (const auto* texture = surface.skin(0))
+  if (const auto* image = getTextureImage(surface.skin(0)))
   {
-    const auto w = static_cast<float>(texture->image().width());
-    const auto h = static_cast<float>(texture->image().height());
+    const auto w = static_cast<float>(image->width());
+    const auto h = static_cast<float>(image->height());
     const auto x1 = -w / 2.0f;
     const auto y1 = -h / 2.0f;
     const auto x2 = x1 + w;

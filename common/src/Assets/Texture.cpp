@@ -83,9 +83,9 @@ std::ostream& operator<<(std::ostream& lhs, const TextureBlendFunc::Enable& rhs)
 
 kdl_reflect_impl(Texture);
 
-Texture::Texture(std::string name, TextureImage image)
+Texture::Texture(std::string name, std::shared_ptr<Resource<TextureImage>> imageResource)
   : m_name{std::move(name)}
-  , m_image{std::move(image)}
+  , m_imageResource{std::move(imageResource)}
   , m_usageCount{0u}
   , m_culling{TextureCulling::Default}
   , m_blendFunc{
@@ -99,7 +99,7 @@ Texture::Texture(Texture&& other)
   : m_name{std::move(other.m_name)}
   , m_absolutePath{std::move(other.m_absolutePath)}
   , m_relativePath{std::move(other.m_relativePath)}
-  , m_image{std::move(other.m_image)}
+  , m_imageResource{std::move(other.m_imageResource)}
   , m_usageCount{static_cast<size_t>(other.m_usageCount)}
   , m_surfaceParms{std::move(other.m_surfaceParms)}
   , m_culling{std::move(other.m_culling)}
@@ -112,7 +112,7 @@ Texture& Texture::operator=(Texture&& other)
   m_name = std::move(other.m_name);
   m_absolutePath = std::move(other.m_absolutePath);
   m_relativePath = std::move(other.m_relativePath);
-  m_image = std::move(other.m_image);
+  m_imageResource = std::move(other.m_imageResource);
   m_usageCount = static_cast<size_t>(other.m_usageCount);
   m_surfaceParms = std::move(other.m_surfaceParms);
   m_culling = std::move(other.m_culling);
@@ -145,20 +145,23 @@ void Texture::setRelativePath(std::filesystem::path relativePath)
   m_relativePath = std::move(relativePath);
 }
 
-const TextureImage& Texture::image() const
+const TextureImage* Texture::image() const
 {
-  return m_image;
+  return m_imageResource->get();
 }
 
-TextureImage& Texture::image()
+TextureImage* Texture::image()
 {
-  return const_cast<TextureImage&>(const_cast<const Texture*>(this)->image());
+  return const_cast<TextureImage*>(const_cast<const Texture*>(this)->image());
 }
 
 void Texture::setOpaque()
 {
   // TODO: this is really a material property, not a texture property
-  m_image.setMask(TextureMask::Off);
+  if (auto* image = m_imageResource->get())
+  {
+    image->setMask(TextureMask::Off);
+  }
 }
 
 const std::set<std::string>& Texture::surfaceParms() const
@@ -212,7 +215,7 @@ void Texture::decUsageCount()
 
 void Texture::activate() const
 {
-  if (m_image.activate())
+  if (const auto* image = m_imageResource->get(); image && image->activate())
   {
     switch (m_culling)
     {
@@ -248,7 +251,7 @@ void Texture::activate() const
 
 void Texture::deactivate() const
 {
-  if (m_image.deactivate())
+  if (const auto* image = m_imageResource->get(); image && image->deactivate())
   {
     if (m_blendFunc.enable != TextureBlendFunc::Enable::UseDefault)
     {
@@ -273,6 +276,16 @@ void Texture::deactivate() const
 
     glAssert(glBindTexture(GL_TEXTURE_2D, 0));
   }
+}
+
+const TextureImage* getTextureImage(const Texture* texture)
+{
+  return texture ? texture->image() : nullptr;
+}
+
+TextureImage* getTextureImage(Texture* texture)
+{
+  return texture ? texture->image() : nullptr;
 }
 
 } // namespace TrenchBroom::Assets

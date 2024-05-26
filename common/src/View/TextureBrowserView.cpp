@@ -179,31 +179,32 @@ void TextureBrowserView::addTexturesToLayout(
 {
   for (const auto* texture : textures)
   {
-    addTextureToLayout(layout, texture, font);
+    addTextureToLayout(layout, *texture, font);
   }
 }
 
 void TextureBrowserView::addTextureToLayout(
-  Layout& layout, const Assets::Texture* texture, const Renderer::FontDescriptor& font)
+  Layout& layout, const Assets::Texture& texture, const Renderer::FontDescriptor& font)
 {
-  const auto maxCellWidth = layout.maxCellWidth();
+  if (const auto* image = texture.image())
+  {
+    const auto maxCellWidth = layout.maxCellWidth();
 
-  const auto textureName = std::filesystem::path{texture->name()}.filename().string();
-  const auto titleHeight = fontManager().font(font).measure(textureName).y();
+    const auto textureName = std::filesystem::path{texture.name()}.filename().string();
+    const auto titleHeight = fontManager().font(font).measure(textureName).y();
 
-  const auto scaleFactor = pref(Preferences::TextureBrowserIconSize);
-  const auto scaledTextureWidth =
-    vm::round(scaleFactor * float(texture->image().width()));
-  const auto scaledTextureHeight =
-    vm::round(scaleFactor * float(texture->image().height()));
+    const auto scaleFactor = pref(Preferences::TextureBrowserIconSize);
+    const auto scaledTextureWidth = vm::round(scaleFactor * float(image->width()));
+    const auto scaledTextureHeight = vm::round(scaleFactor * float(image->height()));
 
-  layout.addItem(
-    texture,
-    textureName,
-    scaledTextureWidth,
-    scaledTextureHeight,
-    maxCellWidth,
-    titleHeight + 4.0f);
+    layout.addItem(
+      &texture,
+      textureName,
+      scaledTextureWidth,
+      scaledTextureHeight,
+      maxCellWidth,
+      titleHeight + 4.0f);
+  }
 }
 
 std::vector<const Assets::TextureCollection*> TextureBrowserView::getCollections() const
@@ -434,7 +435,7 @@ QString TextureBrowserView::tooltip(const Cell& cell)
   auto tooltip = QString{};
   auto ss = QTextStream{&tooltip};
   ss << QString::fromStdString(cellData(cell).name()) << "\n";
-  ss << cellData(cell).image().width() << "x" << cellData(cell).image().height();
+  ss << cellData(cell).image()->width() << "x" << cellData(cell).image()->height();
   return tooltip;
 }
 

@@ -145,7 +145,8 @@ Result<Assets::Texture, ReadTextureError> readTexture(
   {
     return readTextureImage(file, path, name, extension, palette)
            | kdl::transform([&](auto textureImage) {
-               return Assets::Texture{std::move(name), std::move(textureImage)};
+               return Assets::Texture{
+                 std::move(name), makeResource(std::move(textureImage))};
              })
            | kdl::or_else([&](auto error) {
                return Result<Assets::Texture, ReadTextureError>{

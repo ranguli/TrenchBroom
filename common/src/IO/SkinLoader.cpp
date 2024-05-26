@@ -63,7 +63,7 @@ Assets::Texture loadSkin(
                                  : readFreeImageTexture(reader);
     })
     .transform([&](auto textureImage) {
-      return Assets::Texture{path.stem().string(), std::move(textureImage)};
+      return Assets::Texture{path.stem().string(), makeResource(std::move(textureImage))};
     })
     .transform_error([&](auto e) {
       logger.error() << "Could not load skin '" << path << "': " << e.msg;

@@ -215,13 +215,13 @@ std::vector<Assets::Texture> Bsp29Parser::parseTextures(Reader reader, Logger& l
     auto textureReader = reader.subReaderFromBegin(size_t(textureOffset)).buffer();
     const auto mask = getTextureMaskFromTextureName(textureName);
 
-    result.push_back(
-      readIdMipTexture(textureReader, m_palette, mask)
-        .transform([&](auto textureImage) {
-          return Assets::Texture{std::move(textureName), std::move(textureImage)};
-        })
-        .or_else(makeReadTextureErrorHandler(m_fs, logger))
-        .value());
+    result.push_back(readIdMipTexture(textureReader, m_palette, mask)
+                       .transform([&](auto textureImage) {
+                         return Assets::Texture{
+                           std::move(textureName), makeResource(std::move(textureImage))};
+                       })
+                       .or_else(makeReadTextureErrorHandler(m_fs, logger))
+                       .value());
   }
 
   return result;
@@ -369,12 +369,15 @@ vm::vec2f Bsp29Parser::textureCoords(
   const TextureInfo& textureInfo,
   const Assets::Texture* texture) const
 {
-  return texture ? vm::vec2f{
-           (vm::dot(vertex, textureInfo.sAxis) + textureInfo.sOffset)
-             / float(texture->image().width()),
-           (vm::dot(vertex, textureInfo.tAxis) + textureInfo.tOffset)
-             / float(texture->image().height())}
-                 : vm::vec2f::zero();
+  if (const auto* image = getTextureImage(texture))
+  {
+    return vm::vec2f{
+      (vm::dot(vertex, textureInfo.sAxis) + textureInfo.sOffset) / float(image->width()),
+      (vm::dot(vertex, textureInfo.tAxis) + textureInfo.tOffset) / float(image->height()),
+    };
+  }
+
+  return vm::vec2f::zero();
 }
 } // namespace IO
 } // namespace TrenchBroom

@@ -140,9 +140,12 @@ TEST_CASE("AseParserTest.loadDefaultMaterial")
   // shader name is correct, but we loaded the default material
 
   const auto* texture = model->surface(0).skin(0);
+  REQUIRE(texture != nullptr);
   CHECK(texture->name() == "textures/bigtile");
-  CHECK(texture->image().width() == 32u);
-  CHECK(texture->image().height() == 32u);
+
+  REQUIRE(texture->image() != nullptr);
+  CHECK(texture->image()->width() == 32u);
+  CHECK(texture->image()->height() == 32u);
 }
 } // namespace IO
 } // namespace TrenchBroom

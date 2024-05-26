@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "Assets/AsyncResourceManager.h"
+#include "Assets/Resource.h"
 #include "Assets/TextureImage.h"
 #include "Color.h"
 #include "Renderer/GL.h"
@@ -82,7 +84,7 @@ private:
   std::filesystem::path m_absolutePath;
   std::filesystem::path m_relativePath;
 
-  TextureImage m_image;
+  std::shared_ptr<Resource<TextureImage>> m_imageResource;
 
   std::atomic<size_t> m_usageCount;
 
@@ -102,14 +104,14 @@ private:
     m_name,
     m_absolutePath,
     m_relativePath,
-    m_image,
+    m_imageResource,
     m_usageCount,
     m_surfaceParms,
     m_culling,
     m_blendFunc);
 
 public:
-  Texture(std::string name, TextureImage image);
+  Texture(std::string name, std::shared_ptr<Resource<TextureImage>> imageResource);
 
   Texture(const Texture&) = delete;
   Texture& operator=(const Texture&) = delete;
@@ -133,8 +135,8 @@ public:
   const std::filesystem::path& relativePath() const;
   void setRelativePath(std::filesystem::path relativePath);
 
-  const TextureImage& image() const;
-  TextureImage& image();
+  const TextureImage* image() const;
+  TextureImage* image();
 
   void setOpaque();
 
@@ -154,5 +156,8 @@ public:
   void activate() const;
   void deactivate() const;
 };
+
+const TextureImage* getTextureImage(const Texture* texture);
+TextureImage* getTextureImage(Texture* texture);
 
 } // namespace TrenchBroom::Assets

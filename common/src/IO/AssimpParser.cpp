@@ -181,7 +181,7 @@ std::optional<Assets::Texture> loadFallbackTexture(const FileSystem& fs)
         return readFreeImageTexture(reader);
       })
       .transform([](auto textureImage) {
-        return Assets::Texture{"", std::move(textureImage)};
+        return Assets::Texture{"", makeResource(std::move(textureImage))};
       });
   });
 }
@@ -205,7 +205,7 @@ Assets::Texture loadTextureFromFileSystem(
       return readFreeImageTexture(reader);
     })
     .transform([](auto textureImage) {
-      return Assets::Texture{"", std::move(textureImage)};
+      return Assets::Texture{"", makeResource(std::move(textureImage))};
     })
     .or_else(makeReadTextureErrorHandler(fs, logger))
     .value();
@@ -218,15 +218,16 @@ Assets::Texture loadUncompressedEmbeddedTexture(
   std::memcpy(buffer.data(), &data, width * height * sizeof(aiTexel));
 
   const auto averageColor = getAverageColor(buffer, GL_BGRA);
-  auto textureImage = Assets::TextureImage{
+  auto imageResource = makeResource(Assets::TextureImage{
     width,
     height,
     averageColor,
     GL_BGRA,
     Assets::TextureMask::On,
     Assets::NoEmbeddedDefaults{},
-    std::move(buffer)};
-  return Assets::Texture{std::move(name), std::move(textureImage)};
+    std::move(buffer)});
+
+  return Assets::Texture{std::move(name), std::move(imageResource)};
 }
 
 Assets::Texture loadCompressedEmbeddedTexture(
@@ -238,7 +239,7 @@ Assets::Texture loadCompressedEmbeddedTexture(
 {
   return readFreeImageTextureFromMemory(reinterpret_cast<const uint8_t*>(&data), size)
     .transform([&](auto textureImage) {
-      return Assets::Texture{std::move(name), std::move(textureImage)};
+      return Assets::Texture{std::move(name), makeResource(std::move(textureImage))};
     })
     .or_else(makeReadTextureErrorHandler(fs, logger))
     .value();
