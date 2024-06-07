@@ -30,6 +30,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <unordered_map>
 #include <variant>
 
 namespace TrenchBroom::IO
@@ -52,6 +53,7 @@ struct ImageDirectoryEntry
 {
   std::filesystem::path name;
   std::vector<ImageEntry> entries;
+  std::unordered_map<std::filesystem::path, size_t> entryMapLC;
 };
 
 class ImageFileSystemBase : public FileSystem
