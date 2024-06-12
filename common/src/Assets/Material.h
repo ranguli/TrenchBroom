@@ -110,6 +110,7 @@ private:
     m_name,
     m_absolutePath,
     m_relativePath,
+    m_textureResource,
     m_usageCount,
     m_surfaceParms,
     m_culling,
