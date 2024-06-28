@@ -39,9 +39,7 @@
 #include <string>
 #include <vector>
 
-namespace TrenchBroom
-{
-namespace Assets
+namespace TrenchBroom::Assets
 {
 
 MaterialManager::MaterialManager(int magFilter, int minFilter, Logger& logger)
@@ -86,19 +84,12 @@ void MaterialManager::addMaterialCollection(Assets::MaterialCollection collectio
   const auto index = m_collections.size();
   m_collections.push_back(std::move(collection));
 
-  if (m_collections[index].loaded() && !m_collections[index].prepared())
-  {
-    m_toPrepare.push_back(index);
-  }
-
   m_logger.debug() << "Added material collection " << m_collections[index].path();
 }
 
 void MaterialManager::clear()
 {
   m_collections.clear();
-
-  m_toPrepare.clear();
   m_materialsByName.clear();
   m_materials.clear();
 
@@ -110,13 +101,6 @@ void MaterialManager::setFilterMode(const int minFilter, const int magFilter)
   m_minFilter = minFilter;
   m_magFilter = magFilter;
   m_resetFilterMode = true;
-}
-
-void MaterialManager::commitChanges()
-{
-  resetFilterMode();
-  prepare();
-  m_toRemove.clear();
 }
 
 const Material* MaterialManager::material(const std::string& name) const
@@ -162,16 +146,6 @@ void MaterialManager::resetFilterMode()
   }
 }
 
-void MaterialManager::prepare()
-{
-  for (const auto index : m_toPrepare)
-  {
-    auto& collection = m_collections[index];
-    collection.prepare(m_minFilter, m_magFilter);
-  }
-  m_toPrepare.clear();
-}
-
 void MaterialManager::updateMaterials()
 {
   m_materialsByName.clear();
@@ -199,5 +173,4 @@ void MaterialManager::updateMaterials()
     return const_cast<const Material*>(t);
   });
 }
-} // namespace Assets
-} // namespace TrenchBroom
+} // namespace TrenchBroom::Assets
